@@ -1,11 +1,7 @@
 .idea/*
-.vscode/*
-.ipynb_checkpoints/
 build/*
 debug/*
 release/*
-target/
-data/
-*.token
-git.token
+target/*
+data/*
 git_commit.py
