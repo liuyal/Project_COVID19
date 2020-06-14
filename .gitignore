@@ -5,6 +5,7 @@ build/*
 debug/*
 release/*
 target/
+data/
 *.token
 git.token
 git_commit.py
