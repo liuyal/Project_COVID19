@@ -3,9 +3,6 @@ import sys
 import time
 import csv
 import subprocess
-import tarfile
-
-
 
 
 if __name__ == "__main__":

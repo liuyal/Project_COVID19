@@ -6,6 +6,8 @@ import paramiko
 import subprocess
 import zipfile
 import tarfile
+from shutil import copytree, ignore_patterns
+import numpy as np
 
 
 def ssh_connect(hostname, username, password, port):
@@ -40,7 +42,6 @@ def get_repo(path, repos, client):
             print("".join(response).replace("\n\n", "\n"))
 
 
-
 def git_repo_check(path, client):
     stdin, stdout, stderr = client.exec_command("cd " + path + "; git status")
     response = stdout.readlines()
@@ -51,21 +52,18 @@ def git_repo_check(path, client):
 
 
 def get_location_data(path):
-    if not os.path.exists(os.getcwd() + os.sep + "data" + os.sep + "location"):
-        os.makedirs(os.getcwd() + os.sep + "data" + os.sep + "location")
-
+    if not os.path.exists(os.getcwd() + os.sep + "data" + os.sep + "nCoV2019"):
+        os.makedirs(os.getcwd() + os.sep + "data" + os.sep + "nCoV2019")
     location_files = os.listdir(path)
     for file in location_files:
         if "tar" in file:
             tar = tarfile.open(path + os.sep + file, "r:gz")
-            tar.extractall(os.getcwd() + os.sep + "data" + os.sep + "location")
+            tar.extractall(os.getcwd() + os.sep + "data" + os.sep + "nCoV2019")
             tar.close()
 
 
 def get_twitter_data(path):
-    if not os.path.exists(os.getcwd() + os.sep + "data" + os.sep + "twitter"):
-        os.makedirs(os.getcwd() + os.sep + "data" + os.sep + "twitter")
-
+    copytree(path, os.getcwd() + os.sep + "data" + os.sep + "covid19_twitter", ignore=ignore_patterns("*.tsv.gz"))
 
 
 if __name__ == "__main__":
