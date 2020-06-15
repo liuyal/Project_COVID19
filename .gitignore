@@ -4,4 +4,6 @@ debug/*
 release/*
 target/*
 data/*
+covid19_twitter/*
+nCoV2019/*
 git_commit.py
