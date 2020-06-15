@@ -6,6 +6,7 @@ import paramiko
 import subprocess
 import zipfile
 import tarfile
+import shutil
 from shutil import copytree, ignore_patterns
 import numpy as np
 
@@ -74,14 +75,16 @@ if __name__ == "__main__":
 
     covid19_twitter_repo = r"https://github.com/thepanacealab/covid19_twitter.git"
     nCoV2019_location_repo = r"https://github.com/beoutbreakprepared/nCoV2019.git"
+    directory = "~/Desktop/share"
 
     client = ssh_connect(hostname, username, password, port)
 
-    get_repo("~/Desktop/share", [covid19_twitter_repo, nCoV2019_location_repo], client)
-    git_repo_check("~/Desktop/share/data/covid19_twitter", client)
-    git_repo_check("~/Desktop/share/data/nCoV2019", client)
+    get_repo(directory, [covid19_twitter_repo, nCoV2019_location_repo], client)
+    git_repo_check(directory + "/data/covid19_twitter", client)
+    git_repo_check(directory + "/data/nCoV2019", client)
 
-    if not os.path.exists(os.getcwd() + os.sep + "data"): os.makedirs(os.getcwd() + os.sep + "data")
+    shutil.rmtree(os.getcwd() + os.sep + "data")
+    os.makedirs(os.getcwd() + os.sep + "data")
 
     get_location_data(r"\\" + hostname + r"\share\data\nCoV2019\latest_data")
     get_twitter_data(r"\\" + hostname + r"\share\data\covid19_twitter\dailies")
