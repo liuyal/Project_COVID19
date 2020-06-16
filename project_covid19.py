@@ -53,25 +53,20 @@ def check_repo_data(repos):
                 dst = os.getcwd() + os.sep + "data" + os.sep + repo.split('/')[-1].split('.')[0]
                 shutil.copytree(src, dst, ignore=shutil.ignore_patterns("*.tsv.gz", "*.md"))
             else:
-                src = os.getcwd() + os.sep + repo.split('/')[-1].split('.')[0] + os.sep + "latest_data"
+                src = os.getcwd() + os.sep + repo.split('/')[-1].split('.')[0] + os.sep + "csse_covid_19_data" + os.sep + "csse_covid_19_daily_reports"
                 dst = os.getcwd() + os.sep + "data" + os.sep + repo.split('/')[-1].split('.')[0]
-                shutil.copytree(src, dst)
-                for file in os.listdir(dst):
-                    if "tar" in file:
-                        tar = tarfile.open(dst + os.sep + file, "r:gz")
-                        tar.extractall(os.getcwd() + os.sep + "data" + os.sep + "nCoV2019")
-                        tar.close()
+                shutil.copytree(src, dst, ignore=shutil.ignore_patterns("*.tsv.gz", ".gitignore"))
             delete_folder(os.getcwd() + os.sep + repo.split('/')[-1].split('.')[0])
 
 
 def load_data(path):
-    location_data = []
+    location_data = {}
     twitter_data = {}
     for folder in os.listdir(path):
         if "twitter" in folder:
             for sub_folder in os.listdir(path + os.sep + folder):
                 for files in os.listdir(path + os.sep + folder + os.sep + sub_folder):
-                    type = files.split("top1000")[-1].split('.')[0].replace("ii","i")
+                    type = files.split("top1000")[-1].split('.')[0].replace("ii", "i")
                     if type not in twitter_data.keys():
                         twitter_data[type] = {}
                     else:
@@ -82,20 +77,22 @@ def load_data(path):
         else:
             for file in os.listdir(path + os.sep + folder):
                 if ".csv" in file:
-                    location_data = load_csv_data(path + os.sep + folder + os.sep + file)
+                    date = file.split('.')[0]
+                    if date not in location_data.keys(): location_data[date] = {}
+                    location_daily_data = load_csv_data(path + os.sep + folder + os.sep + file)
+                    location_data[date] = location_daily_data
 
     return twitter_data, location_data
 
 
 if __name__ == "__main__":
     covid19_twitter_repo = r"https://github.com/thepanacealab/covid19_twitter.git"
-    nCoV2019_location_repo = r"https://github.com/beoutbreakprepared/nCoV2019.git"
+    nCoV2019_location_repo = r"https://github.com/CSSEGISandData/COVID-19.git"
 
     print("Checking COVID-19 GIT REPO data...")
     check_repo_data([covid19_twitter_repo, nCoV2019_location_repo])
 
     print("Loading COVID-19 Twitter and Location data...")
     twitter_data, location_data = load_data(os.getcwd() + os.sep + "data")
-
 
     print("EOS")
