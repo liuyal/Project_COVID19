@@ -1,7 +1,2 @@
 .idea/*
-build/*
-debug/*
-release/*
-target/*
 git_commit.py
-latestdata.csv
