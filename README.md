@@ -1,6 +1,6 @@
-# Project COVID19
+# Project COVID-19
 
-Data Mining Project for COVID19
+Data Mining Project for COVID-19
 
 ## References
 
