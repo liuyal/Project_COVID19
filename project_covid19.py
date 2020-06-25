@@ -12,11 +12,9 @@ import sys
 import time
 import csv
 import subprocess
-import tarfile
 import shutil
-import numpy
 import stat
-import PIL
+import numpy as np
 
 
 def delete_folder(path):
@@ -57,7 +55,7 @@ def check_repo_data(repos):
 
             delete_folder(os.getcwd() + os.sep + repo.split('/')[-1].split('.')[0])
 
- 
+
 def load_data(path):
     location_data = {}
     twitter_data = {}
