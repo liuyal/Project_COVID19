@@ -17,6 +17,8 @@ import shutil
 import stat
 import numpy as np
 import pandas as pd
+import itertools
+import sqlite3
 
 
 def delete_folder(path):
@@ -32,7 +34,11 @@ def load_csv_data(file_name):
     data_output = []
     file = open(file_name, "r+", encoding="utf-8")
     data = csv.reader(file)
-    for row in data: data_output.append(row)
+    for row in data:
+        for i in range(0, len(row)):
+            if row[i].isnumeric():
+                row[i] = float(row[i])
+        data_output.append(row)
     file.close()
     return data_output
 
@@ -86,21 +92,33 @@ def load_data(path):
         if date not in set(dates):
             del location_data[date]
 
+    del location_data["2020-03-22"]
+    for type in list(twitter_data.keys()):
+        del twitter_data[type]["2020-03-22"]
+
     return twitter_data, location_data
 
 
 def to_data_frame(data):
-    data_frame = {}
+    data_frame_list = []
     for date in list(data.keys()):
         daily_data = data[date]
         header = daily_data.pop(0)
         df = pd.DataFrame(daily_data, columns=header)
-        data_frame[date] = df
-    return data_frame
+        df.insert(0, "Date", [date] * len(daily_data), True)
+        data_frame_list.append(df)
+    return data_frame_list
 
-def df2db(df):
 
-    return 0
+def df2db(db_name, table_name, df):
+    db_connection = sqlite3.connect(db_name)
+    if "location" in table_name.lower():
+        data_frame = pd.concat(df, axis=0, join='outer', sort=False, ignore_index=False, keys=None, levels=None, names=None, verify_integrity=False, copy=True)
+    else:
+        data_frame = df[0]
+        for i in range(0, len(df)):
+            data_frame.append(df[i])
+    data_frame.to_sql(table_name, db_connection, if_exists='replace', index=False)
 
 
 if __name__ == "__main__":
@@ -116,11 +134,15 @@ if __name__ == "__main__":
     print("Loading COVID-19 Twitter and Location data...")
     twitter_data, location_data = load_data(os.getcwd() + os.sep + "data")
 
-    twitter_data_frame = {}
-    for type in list(twitter_data.keys()): twitter_data_frame[type] = to_data_frame(twitter_data[type])
+    print("Creating Data Frames...")
     location_data_frame = to_data_frame(location_data)
+    twitter_data_frame = {}
+    for type in list(twitter_data.keys()):
+        twitter_data_frame[type] = to_data_frame(twitter_data[type])
 
-
-
+    print("Generating Sqlite DB...")
+    df2db('covid19.db', "locations", location_data_frame)
+    for type in list(twitter_data.keys()):
+        df2db('covid19.db', type, twitter_data_frame[type])
 
     print("EOS")
