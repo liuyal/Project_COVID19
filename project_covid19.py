@@ -10,11 +10,13 @@
 import os
 import sys
 import time
+import datetime
 import csv
 import subprocess
 import shutil
 import stat
 import numpy as np
+import pandas as pd
 
 
 def delete_folder(path):
@@ -59,6 +61,7 @@ def check_repo_data(repos):
 def load_data(path):
     location_data = {}
     twitter_data = {}
+    dates = []
     for folder in os.listdir(path):
         if "twitter" in folder:
             for file in os.listdir(path + os.sep + folder):
@@ -70,14 +73,34 @@ def load_data(path):
                     twitter_data[type][date] = []
                 twitter_daily_data = load_csv_data(path + os.sep + folder + os.sep + file)
                 twitter_data[type][date] = twitter_daily_data
+                if date not in dates: dates.append(date)
         else:
             for file in os.listdir(path + os.sep + folder):
                 date = file.split('.')[0]
+                date = datetime.datetime.strptime(date, '%m-%d-%Y').strftime('%Y-%m-%d')
                 if date not in location_data.keys(): location_data[date] = {}
                 location_daily_data = load_csv_data(path + os.sep + folder + os.sep + file)
                 location_data[date] = location_daily_data
 
+    for date in list(location_data.keys()):
+        if date not in set(dates):
+            del location_data[date]
+
     return twitter_data, location_data
+
+
+def to_data_frame(data):
+    data_frame = {}
+    for date in list(data.keys()):
+        daily_data = data[date]
+        header = daily_data.pop(0)
+        df = pd.DataFrame(daily_data, columns=header)
+        data_frame[date] = df
+    return data_frame
+
+def df2db(df):
+
+    return 0
 
 
 if __name__ == "__main__":
@@ -92,5 +115,12 @@ if __name__ == "__main__":
 
     print("Loading COVID-19 Twitter and Location data...")
     twitter_data, location_data = load_data(os.getcwd() + os.sep + "data")
+
+    twitter_data_frame = {}
+    for type in list(twitter_data.keys()): twitter_data_frame[type] = to_data_frame(twitter_data[type])
+    location_data_frame = to_data_frame(location_data)
+
+
+
 
     print("EOS")
