@@ -1,4 +1,5 @@
 .idea/*
 data/*
 *.db
+*.sqbpro
 git_commit.py

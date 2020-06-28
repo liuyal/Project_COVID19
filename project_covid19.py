@@ -103,7 +103,10 @@ def to_data_frame(data):
     data_frame_list = []
     for date in list(data.keys()):
         daily_data = data[date]
-        header = daily_data.pop(0)
+        if "gram" not in daily_data[0] and "FIPS" not in daily_data[0]:
+            header = ["gram", "count"]
+        else:
+            header = daily_data.pop(0)
         df = pd.DataFrame(daily_data, columns=header)
         df.insert(0, "Date", [date] * len(daily_data), True)
         data_frame_list.append(df)
