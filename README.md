@@ -17,7 +17,7 @@ The relationship between social media coverage and reported confirmed COVID-19 c
 - [1] M. Clinic, “Coronavirus disease 2019 (COVID-19),” Mayo Clinic, 16-Jun-2020. [Online]. Available: https://www.mayoclinic.org/diseases-conditions/coronavirus/symptoms-causes/syc-20479963. [Accessed: 25-Jun-2020].
 - [2] L. Gardner, “Mapping COVID-19,” JHU CSSE. [Online]. Available: https://systems.jhu.edu/research/public-health/ncov/. [Accessed: 25-Jun-2020].
 - [3] R. Holmes, “Is COVID-19 Social Media's Levelling Up Moment?” Forbes, 24-Apr-2020. [Online]. Available: https://www.forbes.com/sites/ryanholmes/2020/04/24/is-covid-19-social-medias-levelling-up-moment/#93725e96c606. [Accessed: 25-Jun-2020].
-- [4] Chen, E., Lerman, K. and Ferrara, E., 2020. Tracking Social Media Discourse About The COVID-19 Pandemic: Development Of A Public Coronavirus Twitter Data Set.
+- [4] E. Chen, K. Lerman, E. Ferrara, I. S. Institute, C. A. C. C. A. E. Ferrara, C. Author, C. C. A. E. Ferrara, Close, and L. authors..., “Tracking Social Media Discourse About the COVID-19 Pandemic: Development of a Public Coronavirus Twitter Data Set,” JMIR Public Health and Surveillance. [Online]. Available: https://publichealth.jmir.org/2020/2/e19273/. [Accessed: 02-Jul-2020].
 
 
 ## Dataset Links
