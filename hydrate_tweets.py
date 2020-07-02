@@ -87,7 +87,7 @@ def hydrate(local_data_directory, hydrate_directory, api, n=10):
         counter = 0
         copy_list = copy.deepcopy(id_log[date])
         save_data = []
-        while counter < n:
+        while counter < n and date > "2020-03-22":
 
             data = []
             random.shuffle(copy_list)
@@ -158,6 +158,7 @@ if __name__ == "__main__":
     api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 
     remote_data_directory = r"\\192.168.1.100\share\data\COVID-19-TweetIDs"
+    # remote_data_directory = r"~/Desktop/share/data/COVID-19-TweetIDs"
     local_data_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_IDs"
     hydrate_directory = os.getcwd() + os.sep + "data" + os.sep + "hydrated_tweets"
 
