@@ -141,9 +141,9 @@ if __name__ == "__main__":
     for type in list(twitter_data.keys()):
         twitter_data_frame[type] = to_data_frame(twitter_data[type])
 
-    print("Generating Sqlite DB...")
-    df2db('covid19.db', "locations", location_data_frame)
-    for type in list(twitter_data.keys()):
-        df2db('covid19.db', type, twitter_data_frame[type])
+    # print("Generating Sqlite DB...")
+    # df2db('covid19.db', "locations", location_data_frame)
+    # for type in list(twitter_data.keys()):
+    #     df2db('covid19.db', type, twitter_data_frame[type])
 
     print("EOS")
