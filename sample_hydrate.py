@@ -17,6 +17,8 @@ import paramiko
 import threading
 import random
 import tweepy
+import copy
+import json
 from tqdm import tqdm
 from twarc import Twarc
 
@@ -31,10 +33,11 @@ def delete_folder(path):
 
 
 def get_token(path):
+    f = open(path, "r")
+    keys = f.readlines()
+    f.close()
 
-
-    return 0, 0, 0, 0
-
+    return keys[0].split('"')[1], keys[1].split('"')[1], keys[2].split('"')[1], keys[3].split('"')[1]
 
 
 def save_id(id, data_files):
@@ -69,41 +72,90 @@ def collect_tweet_id(remote_directory, local_directory):
     [item.join() for item in thread_list]
 
 
-def sample_id(path, n):
+def hydrate(local_data_directory, hydrate_directory, api, n=10):
+    delete_folder(hydrate_directory)
+    os.mkdir(hydrate_directory)
+
     id_log = {}
-    for file in os.listdir(path):
-        f = open(path + os.sep + file, "r")
+    for file in os.listdir(local_data_directory):
+        f = open(local_data_directory + os.sep + file, "r")
         id_list = f.readlines()
         f.close()
-        sample = random.sample(id_list, n)
-        id_log[file.split('.')[0]] = sample
+        id_log[file.split('.')[0]] = id_list
 
-    return id_log
+    for date in id_log:
+        counter = 0
+        copy_list = copy.deepcopy(id_log[date])
+        save_data = []
+        while counter < n:
 
+            data = []
+            random.shuffle(copy_list)
+            id = copy_list.pop(0)
 
-def hydrate(directory, ids, api):
+            data_header = "index,id,create_at,text,user_name,verified,location,followers_count,extended,retweeted,quoted"
+            file = open(hydrate_directory + os.sep + date + ".csv", "w+", encoding="utf8")
+            file.truncate(0)
+            file.write(data_header + "\n")
+            file.flush()
+            file.close()
 
-    delete_folder(directory)
-    os.mkdir(directory)
+            try:
+                response = api.get_status(id)._json
+                data.append(str(counter))
+                data.append(str(response["id_str"]))
+                data.append(str(response["created_at"]))
+                data.append("")
+                data.append(str(response["user"]["screen_name"]))
+                data.append(str(response["user"]["verified"]))
+                data.append(str(response["user"]["location"]).replace(",", "").replace("\n", " "))
+                data.append(str(response["user"]["followers_count"]))
 
-    for date in ids:
+                text = str(response["text"])
+                extended_tweet = 0
+                retweeted_status = 0
+                quoted_status = 0
 
-        for id in ids[date]:
+                if "extended_tweet" in response.keys():
+                    extended_tweet = 1
+                    text = response["extended_tweet"]["full_text"]
+                if "retweeted_status" in response.keys():
+                    retweeted_status = 1
+                    if "extended_tweet" in response["retweeted_status"].keys():
+                        retweet = response["retweeted_status"]["extended_tweet"]["full_text"]
+                    else:
+                        retweet = response["retweeted_status"]["text"]
+                    text = text + " " + retweet
+                if "quoted_status" in response.keys():
+                    quoted_status = 1
+                    if "extended_tweet" in response["quoted_status"].keys():
+                        quote = response["quoted_status"]["extended_tweet"]["full_text"]
+                    else:
+                        quote = response["quoted_status"]["text"]
+                    text = text + " " + quote
 
+                data.append(str(extended_tweet))
+                data.append(str(retweeted_status))
+                data.append(str(quoted_status))
+                data[3] = text.replace("\n", " ").replace(",", " ")
+                save_data.append(",".join(data))
+                counter += 1
+            except Exception as e:
+                print("ERROR:", e)
 
+        file = open(hydrate_directory + os.sep + date + ".csv", "a+", encoding="utf8")
+        file.write("\n".join(save_data))
+        file.flush()
+        file.close()
 
-
-            print(date, id)
-
+        print(date)
 
 
 if __name__ == "__main__":
-
     CONSUMER_KEY, CONSUMER_SECRET, OAUTH_TOKEN, OAUTH_TOKEN_SECRET = get_token(os.getcwd() + os.sep + "twitter.token")
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(OAUTH_TOKEN, OAUTH_TOKEN_SECRET)
-    api = tweepy.API(auth)
-
+    api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 
     remote_data_directory = r"\\192.168.1.100\share\data\COVID-19-TweetIDs"
     local_data_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_IDs"
@@ -111,8 +163,6 @@ if __name__ == "__main__":
 
     # collect_tweet_id(remote_data_directory, local_data_directory)
 
-    sampled_ids = sample_id(os.getcwd() + os.sep + "data" + os.sep + "tweet_IDs", 50)
-
-    hydrate(hydrate_directory, sampled_ids, api)
+    hydrate(local_data_directory, hydrate_directory, api, 10)
 
     print("\nEOS")
