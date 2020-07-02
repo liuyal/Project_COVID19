@@ -118,21 +118,19 @@ def df2db(db_name, table_name, df):
     if "location" in table_name.lower():
         data_frame = pd.concat(df, axis=0, join='outer', sort=False, ignore_index=False, keys=None, levels=None, names=None, verify_integrity=False, copy=True)
     else:
-        data_frame = df[0]
-        for i in range(0, len(df)):
-            data_frame.append(df[i])
+        data_frame = pd.concat(df, axis=0, join='inner', sort=False, ignore_index=False, keys=None, levels=None, names=None, verify_integrity=False, copy=True)
     data_frame.to_sql(table_name, db_connection, if_exists='replace', index=False)
 
 
 if __name__ == "__main__":
     covid19_twitter_repo = r"https://github.com/thepanacealab/covid19_twitter.git"
-    nCoV2019_location_repo = r"https://github.com/CSSEGISandData/COVID-19.git"
+    nCoV2019_CSSE_repo = r"https://github.com/CSSEGISandData/COVID-19.git"
 
     covid19_twitter_data_path = os.getcwd() + os.sep + covid19_twitter_repo.split('/')[-1].split('.')[0] + os.sep + "dailies"
-    nCoV2019_location_data_path = os.getcwd() + os.sep + nCoV2019_location_repo.split('/')[-1].split('.')[0] + os.sep + "csse_covid_19_data" + os.sep + "csse_covid_19_daily_reports"
+    nCoV2019_location_data_path = os.getcwd() + os.sep + nCoV2019_CSSE_repo.split('/')[-1].split('.')[0] + os.sep + "csse_covid_19_data" + os.sep + "csse_covid_19_daily_reports"
 
     print("Checking COVID-19 GIT REPO data...")
-    check_repo_data([(covid19_twitter_repo, covid19_twitter_data_path), (nCoV2019_location_repo, nCoV2019_location_data_path)])
+    check_repo_data([(covid19_twitter_repo, covid19_twitter_data_path), (nCoV2019_CSSE_repo, nCoV2019_location_data_path)])
 
     print("Loading COVID-19 Twitter and Location data...")
     twitter_data, location_data = load_data(os.getcwd() + os.sep + "data")
