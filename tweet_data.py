@@ -66,7 +66,7 @@ def curl_id(repo):
     q = queue.Queue()
     thread_list = []
     for item in file_list:
-        thread_list.append(threading.Thread(target=id_request, args=(item, file_list[item], q, 2)))
+        thread_list.append(threading.Thread(target=id_request, args=(item, file_list[item], q, 5)))
     [item.start() for item in thread_list]
     [item.join() for item in thread_list]
 
@@ -161,6 +161,6 @@ if __name__ == "__main__":
 
     id_list = curl_id(tweet_id_repo)
     api = get_token("twitter.token")
-    hydrate(id_list, hydrate_directory, api, 10)
+    hydrate(id_list, hydrate_directory, api, 1000)
 
     print("\nEOS")
