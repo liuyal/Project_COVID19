@@ -85,6 +85,7 @@ def id_request(id, url_list, q, n=1):
 
 
 def hydrate(id_log, hydrate_directory, api, n=10):
+    if not os.path.exists(os.getcwd() + os.sep + "data"): os.makedirs(os.getcwd() + os.sep + "data")
     delete_folder(hydrate_directory)
     os.mkdir(hydrate_directory)
 
@@ -160,7 +161,7 @@ if __name__ == "__main__":
     tweet_id_repo = r"https://github.com/echen102/COVID-19-TweetIDs"
     hydrate_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_hydrated_tweets"
 
-    id_list = curl_id(tweet_id_repo, 5)
+    id_list = curl_id(tweet_id_repo, 1)
     api = get_token("twitter.token")
     hydrate(id_list, hydrate_directory, api, 1000)
 
