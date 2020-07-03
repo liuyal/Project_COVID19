@@ -43,7 +43,7 @@ def get_token(path):
     return tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 
 
-def curl_id(repo):
+def curl_id(repo, n=1):
     response = requests.get(repo)
     text_list = response.text.split('\n')
 
@@ -66,7 +66,8 @@ def curl_id(repo):
     q = queue.Queue()
     thread_list = []
     for item in file_list:
-        thread_list.append(threading.Thread(target=id_request, args=(item, file_list[item], q, 5)))
+        if item > "2020-03-22":
+            thread_list.append(threading.Thread(target=id_request, args=(item, file_list[item], q, n)))
     [item.start() for item in thread_list]
     [item.join() for item in thread_list]
 
@@ -159,7 +160,7 @@ if __name__ == "__main__":
     tweet_id_repo = r"https://github.com/echen102/COVID-19-TweetIDs"
     hydrate_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_hydrated_tweets"
 
-    id_list = curl_id(tweet_id_repo)
+    id_list = curl_id(tweet_id_repo, 5)
     api = get_token("twitter.token")
     hydrate(id_list, hydrate_directory, api, 1000)
 
