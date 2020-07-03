@@ -4,7 +4,7 @@
 # EMAIL: Liuyal@sfu.ca
 #
 # DESCRIPTION:
-# Tweet hydrator daily 1000 random
+# Tweet hydrate script to get daily 1000 random tweets
 # ----------------------------------------------------------------------
 
 import os
@@ -13,12 +13,14 @@ import time
 import datetime
 import shutil
 import stat
-import paramiko
 import threading
 import random
 import tweepy
 import copy
 import json
+import requests
+from bs4 import BeautifulSoup
+
 
 def delete_folder(path):
     for root, dirs, files in os.walk(path):
@@ -40,6 +42,37 @@ def get_token(path):
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(OAUTH_TOKEN, OAUTH_TOKEN_SECRET)
     return tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+
+
+def curl_id(repo):
+    response = requests.get(repo)
+    text_list = response.text.split('\n')
+
+    folder_list = []
+    for item in text_list:
+        if "2020" in item and "js-navigation-open link-gray-dark" in item:
+            folder_list.append("https://github.com" + item[item.index('href="') + len('href="'): item.index('"', item.index('href="') + len('href="'), -1)])
+
+    file_list = []
+    for item in folder_list:
+        response = requests.get(item)
+        text_list = response.text.split('\n')
+        for string in text_list:
+            if "coronavirus-tweet-id" in string and "js-navigation-open link-gray-dark" in string:
+                url = "https://raw.githubusercontent.com" + string[string.index('href="') + len('href="'): string.index('"', string.index('href="') + len('href="'), -1)]
+                file_list.append(url.replace("blob/",''))
+
+
+
+
+    for item in file_list:
+        response = requests.get(item)
+        text_list = response.text.split('\n')
+        print(item)
+
+
+
+
 
 
 def hydrate(local_data_directory, hydrate_directory, api, n=10):
@@ -122,10 +155,13 @@ def hydrate(local_data_directory, hydrate_directory, api, n=10):
 
 
 if __name__ == "__main__":
+
     tweet_id_repo = r"https://github.com/echen102/COVID-19-TweetIDs"
-    local_data_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_IDs"
+
     hydrate_directory = os.getcwd() + os.sep + "data" + os.sep + "hydrated_tweets"
 
-    # hydrate(local_data_directory, hydrate_directory, get_token("twitter.token"), 10)
+    curl_id(tweet_id_repo)
+
+    # hydrate(hydrate_directory, get_token("twitter.token"), 10)
 
     print("\nEOS")
