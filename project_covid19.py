@@ -16,6 +16,6 @@ import pandas as pd
 import sqlite3
 
 if __name__ == "__main__":
-    nCoV2019_CSSE_repo = r"https://github.com/CSSEGISandData/COVID-19.git"
+
 
     print("EOS")

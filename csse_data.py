@@ -43,24 +43,19 @@ def load_csv_data(file_name):
     return data_output
 
 
-def check_repo_data(repos):
-    if not os.path.exists(os.getcwd() + os.sep + "data"):
-
+def check_repo_data(repo, data_path):
+    if not os.path.exists(os.getcwd() + os.sep + "data" + os.sep + repo.split('/')[-1].split('.')[0]):
         for folder in os.listdir(os.getcwd()):
             if os.path.isdir(folder) and ".idea" not in folder and ".git" not in folder and "data" not in folder:
                 delete_folder(os.getcwd() + os.sep + folder)
-
-        for repo, src_path in repos: os.system("git clone " + repo)
+        os.system("git clone " + repo)
         os.makedirs(os.getcwd() + os.sep + "data")
-
-        for repo, src_path in repos:
-            dst = os.getcwd() + os.sep + "data" + os.sep + repo.split('/')[-1].split('.')[0].lower()
-            if not os.path.isdir(dst): os.mkdir(dst)
-            for root, dirs, files in os.walk(src_path, topdown=False):
-                for name in files:
-                    if ".csv" in name:
-                        shutil.copyfile(root + os.sep + name, dst + os.sep + name)
-
+        dst = os.getcwd() + os.sep + "data" + os.sep + repo.split('/')[-1].split('.')[0]
+        if not os.path.isdir(dst): os.mkdir(dst)
+        for root, dirs, files in os.walk(data_path, topdown=False):
+            for name in files:
+                if ".csv" in name:
+                    shutil.copyfile(root + os.sep + name, dst + os.sep + name)
             delete_folder(os.getcwd() + os.sep + repo.split('/')[-1].split('.')[0])
 
 
@@ -73,7 +68,6 @@ def load_data(path):
             if date not in location_data.keys(): location_data[date] = {}
             location_daily_data = load_csv_data(path + os.sep + file)
             location_data[date] = location_daily_data
-
     return location_data
 
 
@@ -99,7 +93,7 @@ if __name__ == "__main__":
     nCoV2019_location_data_path = os.getcwd() + os.sep + nCoV2019_CSSE_repo.split('/')[-1].split('.')[0] + os.sep + "csse_covid_19_data" + os.sep + "csse_covid_19_daily_reports"
 
     print("Checking COVID-19 GIT REPO data...")
-    check_repo_data([(nCoV2019_CSSE_repo, nCoV2019_location_data_path)])
+    check_repo_data(nCoV2019_CSSE_repo, nCoV2019_location_data_path)
 
     print("Loading COVID-19 Twitter and Location data...")
     location_data = load_data(os.getcwd() + os.sep + "data" + os.sep + "COVID-19")
