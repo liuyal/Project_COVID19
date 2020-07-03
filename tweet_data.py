@@ -17,9 +17,8 @@ import threading
 import random
 import tweepy
 import copy
-import json
 import requests
-from bs4 import BeautifulSoup
+import queue
 
 
 def delete_folder(path):
@@ -53,45 +52,47 @@ def curl_id(repo):
         if "2020" in item and "js-navigation-open link-gray-dark" in item:
             folder_list.append("https://github.com" + item[item.index('href="') + len('href="'): item.index('"', item.index('href="') + len('href="'), -1)])
 
-    file_list = []
+    file_list = {}
     for item in folder_list:
         response = requests.get(item)
         text_list = response.text.split('\n')
         for string in text_list:
             if "coronavirus-tweet-id" in string and "js-navigation-open link-gray-dark" in string:
                 url = "https://raw.githubusercontent.com" + string[string.index('href="') + len('href="'): string.index('"', string.index('href="') + len('href="'), -1)]
-                file_list.append(url.replace("blob/",''))
+                date = "-".join(string.split("tweet-id-")[-1].split(".txt")[0].split("-")[0:-1])
+                if date not in list(file_list.keys()): file_list[date] = []
+                file_list[date].append(url.replace("blob/", ''))
 
-
-
-
+    q = queue.Queue()
+    thread_list = []
     for item in file_list:
+        thread_list.append(threading.Thread(target=id_request, args=(item, file_list[item], q, 2)))
+    [item.start() for item in thread_list]
+    [item.join() for item in thread_list]
+
+    return list(q.queue)
+
+
+def id_request(id, url_list, q, n=1):
+    id_list = []
+    for item in random.sample(url_list, n):
         response = requests.get(item)
-        text_list = response.text.split('\n')
-        print(item)
+        id_list = id_list + response.text.split('\n')
+        sys.stdout.write(id + " " + item + " " + "\n")
+    sys.stdout.write(id + " Complete!\n")
+    q.put((id, id_list))
 
 
-
-
-
-
-def hydrate(local_data_directory, hydrate_directory, api, n=10):
+def hydrate(id_log, hydrate_directory, api, n=10):
     delete_folder(hydrate_directory)
     os.mkdir(hydrate_directory)
 
-    id_log = {}
-    for file in os.listdir(local_data_directory):
-        f = open(local_data_directory + os.sep + file, "r")
-        id_list = f.readlines()
-        f.close()
-        id_log[file.split('.')[0]] = id_list
-
-    for date in id_log:
+    for date, id_list in id_log:
         counter = 0
-        copy_list = copy.deepcopy(id_log[date])
+        copy_list = copy.deepcopy(id_list)
         save_data = []
-        while counter < n and date > "2020-03-22":
 
+        while counter < n and date > "2020-03-22":
             data = []
             random.shuffle(copy_list)
             id = copy_list.pop(0)
@@ -146,22 +147,20 @@ def hydrate(local_data_directory, hydrate_directory, api, n=10):
             except Exception as e:
                 print("ERROR:", e)
 
-        file = open(hydrate_directory + os.sep + date + ".csv", "a+", encoding="utf8")
-        file.write("\n".join(save_data))
-        file.flush()
-        file.close()
-
-        print(date)
+        if date > "2020-03-22":
+            file = open(hydrate_directory + os.sep + date + ".csv", "a+", encoding="utf8")
+            file.write("\n".join(save_data))
+            file.flush()
+            file.close()
+        print(date, " hydrate Complete!")
 
 
 if __name__ == "__main__":
-
     tweet_id_repo = r"https://github.com/echen102/COVID-19-TweetIDs"
+    hydrate_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_hydrated_tweets"
 
-    hydrate_directory = os.getcwd() + os.sep + "data" + os.sep + "hydrated_tweets"
-
-    curl_id(tweet_id_repo)
-
-    # hydrate(hydrate_directory, get_token("twitter.token"), 10)
+    id_list = curl_id(tweet_id_repo)
+    api = get_token("twitter.token")
+    hydrate(id_list, hydrate_directory, api, 10)
 
     print("\nEOS")

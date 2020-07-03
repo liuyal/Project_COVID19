@@ -44,26 +44,21 @@ def load_csv_data(file_name):
     return data_output
 
 
-def check_repo_data(repo, url):
-
-    if not os.path.exists(os.getcwd() + os.sep + "data" + os.sep + repo.split('/')[-1].split('.')[0]):
+def check_repo_data(dst, url):
+    if not os.path.exists(dst):
         for folder in os.listdir(os.getcwd()):
             if os.path.isdir(folder) and ".idea" not in folder and ".git" not in folder and "data" not in folder:
                 delete_folder(os.getcwd() + os.sep + folder)
-
         os.makedirs(os.getcwd() + os.sep + "data")
-        dst = os.getcwd() + os.sep + "data" + os.sep + repo.split('/')[-1].split('.')[0]
         if not os.path.isdir(dst): os.mkdir(dst)
 
         response = requests.get(url)
         text_list = response.text.split('\n')
-
         csv_list = []
         for item in text_list:
             if "js-navigation-open link-gray-dark" in item and ".csv" in item:
                 csv_url = "https://raw.githubusercontent.com" + item[item.index('href="') + len('href="'): item.index('"', item.index('href="') + len('href="'), -1)]
                 csv_list.append(csv_url.replace("blob/",""))
-
         for item in csv_list:
             response = requests.get(item)
             f = open(dst + os.sep + item.split('/')[-1], "w", encoding="utf-8")
@@ -103,18 +98,19 @@ def df2db(db_name, table_name, df):
 
 if __name__ == "__main__":
     nCoV2019_CSSE_repo = r"https://github.com/CSSEGISandData/COVID-19.git"
-    nCoV2019_CSSE_repo_data_url = r"https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_daily_reports"
+    nCoV2019_CSSE_data_url = r"https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_daily_reports"
+    nCoV2019_CSSE_data_path = os.getcwd() + os.sep + "data" + os.sep + nCoV2019_CSSE_repo.split('/')[-1].split('.')[0].lower().replace('-', '_') + "_location_data"
 
     print("Checking COVID-19 GIT REPO data...")
-    check_repo_data(nCoV2019_CSSE_repo, nCoV2019_CSSE_repo_data_url)
+    check_repo_data(nCoV2019_CSSE_data_path, nCoV2019_CSSE_data_url)
 
     print("Loading COVID-19 Location data...")
-    location_data = load_data(os.getcwd() + os.sep + "data" + os.sep + "COVID-19")
+    location_data = load_data(nCoV2019_CSSE_data_path)
 
     print("Creating COVID-19 Location Data Frames...")
     location_data_frame = to_data_frame(location_data)
 
-    print("Generating COVID-19 Location Sqlite DB...")
-    df2db('covid19.db', "locations", location_data_frame)
+    # print("Generating COVID-19 Location Sqlite DB...")
+    # df2db("data" + os.sep + "covid19.db", "locations", location_data_frame)
 
     print("EOS")
