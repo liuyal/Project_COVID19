@@ -43,7 +43,7 @@ def get_token(path):
     return tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 
 
-def curl_id(repo, n=1):
+def curl_id(repo, start_date="2020-03-22", n=1):
     response = requests.get(repo)
     text_list = response.text.split('\n')
 
@@ -63,10 +63,12 @@ def curl_id(repo, n=1):
                 if date not in list(file_list.keys()): file_list[date] = []
                 file_list[date].append(url.replace("blob/", ''))
 
+    # TODO: check latest date
+
     q = queue.Queue()
     thread_list = []
     for item in file_list:
-        if item > "2020-03-22":
+        if item > start_date:
             thread_list.append(threading.Thread(target=id_request, args=(item, file_list[item], q, n)))
     [item.start() for item in thread_list]
     [item.join() for item in thread_list]
@@ -84,10 +86,9 @@ def id_request(id, url_list, q, n=1):
     q.put((id, id_list))
 
 
-def hydrate(id_log, hydrate_directory, api, n=10):
+def hydrate(id_log, hydrate_directory, api, start_date="2020-03-22", n=10):
     if not os.path.exists(os.getcwd() + os.sep + "data"): os.makedirs(os.getcwd() + os.sep + "data")
-    delete_folder(hydrate_directory)
-    os.mkdir(hydrate_directory)
+    if not os.path.exists(hydrate_directory): os.mkdir(hydrate_directory)
 
     for date, id_list in id_log:
         counter = 0
@@ -125,6 +126,7 @@ def hydrate(id_log, hydrate_directory, api, n=10):
                 if "extended_tweet" in response.keys():
                     extended_tweet = 1
                     text = response["extended_tweet"]["full_text"]
+
                 if "retweeted_status" in response.keys():
                     retweeted_status = 1
                     if "extended_tweet" in response["retweeted_status"].keys():
@@ -132,6 +134,7 @@ def hydrate(id_log, hydrate_directory, api, n=10):
                     else:
                         retweet = response["retweeted_status"]["text"]
                     text = text + " " + retweet
+
                 if "quoted_status" in response.keys():
                     quoted_status = 1
                     if "extended_tweet" in response["quoted_status"].keys():
@@ -149,7 +152,7 @@ def hydrate(id_log, hydrate_directory, api, n=10):
             except Exception as e:
                 print("ERROR:", e)
 
-        if date > "2020-03-22":
+        if date > start_date:
             file = open(hydrate_directory + os.sep + date + ".csv", "a+", encoding="utf8")
             file.write("\n".join(save_data))
             file.flush()
@@ -161,8 +164,8 @@ if __name__ == "__main__":
     tweet_id_repo = r"https://github.com/echen102/COVID-19-TweetIDs"
     hydrate_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_hydrated_tweets"
 
-    id_list = curl_id(tweet_id_repo, 1)
+    id_list = curl_id(tweet_id_repo, "2020-03-22", 1)
     api = get_token("twitter.token")
-    hydrate(id_list, hydrate_directory, api, 1000)
+    hydrate(id_list, hydrate_directory, api, "2020-03-22", 1000)
 
     print("\nEOS")

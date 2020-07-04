@@ -4,7 +4,7 @@
 # EMAIL: Liuyal@sfu.ca
 #
 # DESCRIPTION:
-# COVID-19 Data Mining Project
+# CSSE confirmed cases data collector
 # ----------------------------------------------------------------------
 
 import os
@@ -12,14 +12,11 @@ import sys
 import time
 import datetime
 import csv
-import subprocess
 import shutil
 import stat
-import numpy as np
-import pandas as pd
-import itertools
 import sqlite3
 import requests
+import pandas as pd
 
 
 def delete_folder(path):
@@ -44,35 +41,53 @@ def load_csv_data(file_name):
     return data_output
 
 
-def check_repo_data(dst, url):
+def check_repo_data(dst, url, start_date="2020-03-22"):
     if not os.path.exists(dst):
         for folder in os.listdir(os.getcwd()):
             if os.path.isdir(folder) and ".idea" not in folder and ".git" not in folder and "data" not in folder:
                 delete_folder(os.getcwd() + os.sep + folder)
         os.makedirs(os.getcwd() + os.sep + "data")
         if not os.path.isdir(dst): os.mkdir(dst)
-
         response = requests.get(url)
         text_list = response.text.split('\n')
         csv_list = []
         for item in text_list:
             if "js-navigation-open link-gray-dark" in item and ".csv" in item:
                 csv_url = "https://raw.githubusercontent.com" + item[item.index('href="') + len('href="'): item.index('"', item.index('href="') + len('href="'), -1)]
-                csv_list.append(csv_url.replace("blob/",""))
+                csv_list.append(csv_url.replace("blob/", ""))
         for item in csv_list:
-            response = requests.get(item)
-            f = open(dst + os.sep + item.split('/')[-1], "w", encoding="utf-8")
-            f.write(response.text)
-            f.flush()
-            f.close()
+            date = datetime.datetime.strptime(item.split('/')[-1].split('.')[0], '%m-%d-%Y').strftime('%Y-%m-%d')
+            if date > start_date:
+                response = requests.get(item)
+                f = open(dst + os.sep + date + ".csv", "w", encoding="utf-8")
+                f.write(response.text)
+                f.flush()
+                f.close()
+
+    elif len(os.listdir(dst)) > 0:
+        dates = [file.replace(".csv", "") for file in os.listdir(dst) if ".csv" in file]
+        response = requests.get(url)
+        text_list = response.text.split('\n')
+        csv_list = []
+        for item in text_list:
+            if "js-navigation-open link-gray-dark" in item and ".csv" in item:
+                csv_url = "https://raw.githubusercontent.com" + item[item.index('href="') + len('href="'): item.index('"', item.index('href="') + len('href="'), -1)]
+                csv_list.append(csv_url.replace("blob/", ""))
+        for item in csv_list:
+            date = datetime.datetime.strptime(item.split('/')[-1].split('.')[0], '%m-%d-%Y').strftime('%Y-%m-%d')
+            if date > max(dates):
+                response = requests.get(item)
+                f = open(dst + os.sep + date + ".csv", "w", encoding="utf-8")
+                f.write(response.text)
+                f.flush()
+                f.close()
 
 
-def load_data(path):
+def load_data(path, start_date="2020-03-22"):
     location_data = {}
     for file in os.listdir(path):
         date = file.split('.')[0]
-        date = datetime.datetime.strptime(date, '%m-%d-%Y').strftime('%Y-%m-%d')
-        if date > "2020-03-22":
+        if date > start_date:
             if date not in location_data.keys(): location_data[date] = {}
             location_daily_data = load_csv_data(path + os.sep + file)
             location_data[date] = location_daily_data
@@ -103,14 +118,11 @@ if __name__ == "__main__":
 
     print("Checking COVID-19 GIT REPO data...")
     check_repo_data(nCoV2019_CSSE_data_path, nCoV2019_CSSE_data_url)
-
-    print("Loading COVID-19 Location data...")
-    location_data = load_data(nCoV2019_CSSE_data_path)
-
-    print("Creating COVID-19 Location Data Frames...")
+    print("Loading COVID-19 Locations data...")
+    location_data = load_data(nCoV2019_CSSE_data_path, "2020-03-22")
+    print("Creating COVID-19 Locations Data Frames...")
     location_data_frame = to_data_frame(location_data)
-
-    # print("Generating COVID-19 Location Sqlite DB...")
-    # df2db("data" + os.sep + "covid19.db", "locations", location_data_frame)
+    print("Generating COVID-19 Locations Sqlite DB...")
+    df2db("data" + os.sep + "covid19.db", "locations", location_data_frame)
 
     print("EOS")

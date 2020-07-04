@@ -11,9 +11,10 @@ import os
 import sys
 import time
 import datetime
+import sqlite3
 import numpy as np
 import pandas as pd
-import sqlite3
+
 
 if __name__ == "__main__":
 

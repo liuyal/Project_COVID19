@@ -64,6 +64,6 @@ if __name__ == "__main__":
     client = ssh_connect(hostname, username, password, port)
 
     get_repo(directory, [covid19_twitter_repo, covid19_twitter_id_repo, nCoV2019_location_repo], client)
-    git_repo_check(directory + "/data/covid19_twitter", client)
-    git_repo_check(directory + "/data/COVID-19", client)
-    git_repo_check(directory + "/data/COVID-19-TweetIDs", client)
+    git_repo_check(directory + "/repos/covid19_twitter", client)
+    git_repo_check(directory + "/repos/COVID-19", client)
+    git_repo_check(directory + "/repos/COVID-19-TweetIDs", client)
