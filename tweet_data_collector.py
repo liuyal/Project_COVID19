@@ -43,7 +43,7 @@ def get_token(path):
     return tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 
 
-def curl_id(repo, start_date="2020-03-22", n=1):
+def curl_id(hydrate_directory, repo, start_date="2020-03-22", n=1):
     response = requests.get(repo)
     text_list = response.text.split('\n')
 
@@ -63,11 +63,17 @@ def curl_id(repo, start_date="2020-03-22", n=1):
                 if date not in list(file_list.keys()): file_list[date] = []
                 file_list[date].append(url.replace("blob/", ''))
 
-    # TODO: check latest date
-    # if data exists and hydrate dst exists check last date
-    # compare with repo last date
-    # if repo > local last date
-    # find difference and put into file list.
+    if os.path.exists(os.getcwd() + os.sep + "data"):
+        if os.path.exists(hydrate_directory):
+            dates = [dates.replace(".csv", '') for dates in os.listdir(hydrate_directory)]
+            repo_dates = [dates for dates in list(file_list.keys()) if dates > start_date]
+            if len(repo_dates) != len(dates):
+                delta = set(repo_dates).difference(set(dates))
+                if len(delta) > 0:
+                    filtered_file_list = {}
+                    for item in list(delta):
+                        filtered_file_list[item] = file_list[item]
+                    file_list = filtered_file_list
 
     q = queue.Queue()
     thread_list = []
@@ -93,24 +99,19 @@ def id_request(id, url_list, q, n=1):
 def hydrate(id_log, hydrate_directory, api, start_date="2020-03-22", n=10):
     if not os.path.exists(os.getcwd() + os.sep + "data"): os.makedirs(os.getcwd() + os.sep + "data")
     if not os.path.exists(hydrate_directory): os.mkdir(hydrate_directory)
-
+    
     for date, id_list in id_log:
         counter = 0
         copy_list = copy.deepcopy(id_list)
-        save_data = []
+        data_header = "index,id,create_at,text,user_name,verified,location,followers_count,extended,retweeted,quoted"
+        file = open(hydrate_directory + os.sep + date + ".csv", "a+", encoding="utf8")
+        file.truncate(0)
+        file.write(data_header + "\n")
 
-        while counter < n and date > "2020-03-22":
+        while counter < n and date > start_date:
             data = []
             random.shuffle(copy_list)
             id = copy_list.pop(0)
-
-            data_header = "index,id,create_at,text,user_name,verified,location,followers_count,extended,retweeted,quoted"
-            file = open(hydrate_directory + os.sep + date + ".csv", "w+", encoding="utf8")
-            file.truncate(0)
-            file.write(data_header + "\n")
-            file.flush()
-            file.close()
-
             try:
                 response = api.get_status(id)._json
                 data.append(str(counter))
@@ -130,7 +131,6 @@ def hydrate(id_log, hydrate_directory, api, start_date="2020-03-22", n=10):
                 if "extended_tweet" in response.keys():
                     extended_tweet = 1
                     text = response["extended_tweet"]["full_text"]
-
                 if "retweeted_status" in response.keys():
                     retweeted_status = 1
                     if "extended_tweet" in response["retweeted_status"].keys():
@@ -138,7 +138,6 @@ def hydrate(id_log, hydrate_directory, api, start_date="2020-03-22", n=10):
                     else:
                         retweet = response["retweeted_status"]["text"]
                     text = text + " " + retweet
-
                 if "quoted_status" in response.keys():
                     quoted_status = 1
                     if "extended_tweet" in response["quoted_status"].keys():
@@ -151,16 +150,12 @@ def hydrate(id_log, hydrate_directory, api, start_date="2020-03-22", n=10):
                 data.append(str(retweeted_status))
                 data.append(str(quoted_status))
                 data[3] = text.replace("\n", " ").replace(",", " ")
-                save_data.append(",".join(data))
                 counter += 1
+                file.write(",".join(data) + "\n")
+                file.flush()
             except Exception as e:
                 print("ERROR:", e)
-
-        if date > start_date:
-            file = open(hydrate_directory + os.sep + date + ".csv", "a+", encoding="utf8")
-            file.write("\n".join(save_data))
-            file.flush()
-            file.close()
+        file.close()
         print(date, " hydrate Complete!")
 
 
@@ -168,7 +163,7 @@ if __name__ == "__main__":
     tweet_id_repo = r"https://github.com/echen102/COVID-19-TweetIDs"
     hydrate_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_hydrated_tweets"
 
-    id_list = curl_id(tweet_id_repo, "2020-03-22", 1)
+    id_list = curl_id(hydrate_directory, tweet_id_repo, "2020-03-22", 1)
     api = get_token("jerry.token")
     hydrate(id_list, hydrate_directory, api, "2020-03-22", 1000)
 
