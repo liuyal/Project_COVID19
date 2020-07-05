@@ -64,6 +64,10 @@ def curl_id(repo, start_date="2020-03-22", n=1):
                 file_list[date].append(url.replace("blob/", ''))
 
     # TODO: check latest date
+    # if data exists and hydrate dst exists check last date
+    # compare with repo last date
+    # if repo > local last date
+    # find difference and put into file list.
 
     q = queue.Queue()
     thread_list = []
