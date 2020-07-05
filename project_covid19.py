@@ -16,7 +16,16 @@ import numpy as np
 import pandas as pd
 
 
+def print_header(path):
+    f = open(path, "r", encoding="utf8")
+    print(f.read())
+    f.close()
+    print("\nDATE: 2020/08/10")
+    print("AUTHOR: Jerry Liu")
+    print("EMAIL: Liuyal@sfu.ca")
+
+
 if __name__ == "__main__":
+    print_header(os.getcwd() + os.sep + "header.txt")
 
-
-    print("EOS")
+    time.sleep(4)

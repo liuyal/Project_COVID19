@@ -74,6 +74,10 @@ def curl_id(hydrate_directory, repo, start_date="2020-03-22", n=1):
                     for item in list(delta):
                         filtered_file_list[item] = file_list[item]
                     file_list = filtered_file_list
+                else:
+                    file_list = {}
+            else:
+                file_list = {}
 
     q = queue.Queue()
     thread_list = []
@@ -99,7 +103,7 @@ def id_request(id, url_list, q, n=1):
 def hydrate(id_log, hydrate_directory, api, start_date="2020-03-22", n=10):
     if not os.path.exists(os.getcwd() + os.sep + "data"): os.makedirs(os.getcwd() + os.sep + "data")
     if not os.path.exists(hydrate_directory): os.mkdir(hydrate_directory)
-    
+
     for date, id_list in id_log:
         counter = 0
         copy_list = copy.deepcopy(id_list)
@@ -163,8 +167,11 @@ if __name__ == "__main__":
     tweet_id_repo = r"https://github.com/echen102/COVID-19-TweetIDs"
     hydrate_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_hydrated_tweets"
 
+    print("Curl COVID-19 GIT Tweet ID...")
     id_list = curl_id(hydrate_directory, tweet_id_repo, "2020-03-22", 1)
-    api = get_token("jerry.token")
-    hydrate(id_list, hydrate_directory, api, "2020-03-22", 1000)
 
-    print("\nEOS")
+    print("Loading Twitter API KEYs...")
+    api = get_token("jerry.token")
+
+    print("Hydrating COVID-19 Tweet text from ID...")
+    hydrate(id_list, hydrate_directory, api, "2020-03-22", 1000)
