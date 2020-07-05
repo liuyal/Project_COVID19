@@ -2,5 +2,5 @@
 data/*
 *.db
 *.sqbpro
-*.token
+twitter.token
 git_commit.py

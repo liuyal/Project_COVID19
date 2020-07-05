@@ -165,7 +165,7 @@ if __name__ == "__main__":
     hydrate_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_hydrated_tweets"
 
     id_list = curl_id(tweet_id_repo, "2020-03-22", 1)
-    api = get_token("twitter.token")
+    api = get_token("jerry.token")
     hydrate(id_list, hydrate_directory, api, "2020-03-22", 1000)
 
     print("\nEOS")
