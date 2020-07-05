@@ -1,9 +1,16 @@
-# Project COVID-19
+```
+██████╗ ██████╗  ██████╗      ██╗███████╗ ██████╗████████╗     ██████╗ ██████╗ ██╗   ██╗██╗██████╗        ██╗ █████╗
+██╔══██╗██╔══██╗██╔═══██╗     ██║██╔════╝██╔════╝╚══██╔══╝    ██╔════╝██╔═══██╗██║   ██║██║██╔══██╗      ███║██╔══██╗
+██████╔╝██████╔╝██║   ██║     ██║█████╗  ██║        ██║       ██║     ██║   ██║██║   ██║██║██║  ██║█████╗╚██║╚██████║
+██╔═══╝ ██╔══██╗██║   ██║██   ██║██╔══╝  ██║        ██║       ██║     ██║   ██║╚██╗ ██╔╝██║██║  ██║╚════╝ ██║ ╚═══██║
+██║     ██║  ██║╚██████╔╝╚█████╔╝███████╗╚██████╗   ██║       ╚██████╗╚██████╔╝ ╚████╔╝ ██║██████╔╝       ██║ █████╔╝
+╚═╝     ╚═╝  ╚═╝ ╚═════╝  ╚════╝ ╚══════╝ ╚═════╝   ╚═╝        ╚═════╝ ╚═════╝   ╚═══╝  ╚═╝╚═════╝        ╚═╝ ╚════╝
+```
 
-## COVID-19 Data Mining Project 
+## COVID-19 Data Mining Project
 
 ## Introduction
-Coronavirus disease 2019 or COVID-19 is an infectious disease caused by severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2) [1]. First identified back in December 2019 in Wuhan province, China, the COVID-19 virus has resulted in nearly 9 million confirmed cases globally [2]. Amidst the COVID-19 crisis, global social media usage on platforms such as Facebook, WhatsApp, Twitter, and etc. has surged significantly [3]. As the general population depend heavily on various social media platforms to gather the latest information about the pandemic and as well as to voice their opinions, an increase of daily users and daily activities was observed. 
+Coronavirus disease 2019 or COVID-19 is an infectious disease caused by severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2) [1]. First identified back in December 2019 in Wuhan province, China, the COVID-19 virus has resulted in nearly 9 million confirmed cases globally [2]. Amidst the COVID-19 crisis, global social media usage on platforms such as Facebook, WhatsApp, Twitter, and etc. has surged significantly [3]. As the general population depend heavily on various social media platforms to gather the latest information about the pandemic and as well as to voice their opinions, an increase of daily users and daily activities was observed.
 
 An interesting data mining topic to focus on for the COVID-19 pandemic is determining the relationship between the spread of awareness and COVID-19 related topics and sentiments on the social media platform Twitter, with the number of reported confirmed cases for a given country over a period of time. Since the pandemic originated from Asia, and only after a three-month period before the virus quickly spread across North America; it would be very interesting to follow the influx of COVID-19 related tweets as the pandemic reaches a country and begin to spread rapidly.
 
