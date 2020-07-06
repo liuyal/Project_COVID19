@@ -112,7 +112,7 @@ def hydrate(id_log, hydrate_directory, api, start_date="2020-03-22", n=10):
         file.truncate(0)
         file.write(data_header + "\n")
 
-        while counter < n and date > start_date:
+        while counter <= n and date > start_date:
             data = []
             random.shuffle(copy_list)
             id = copy_list.pop(0)

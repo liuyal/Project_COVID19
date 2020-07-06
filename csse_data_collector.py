@@ -28,25 +28,12 @@ def delete_folder(path):
     shutil.rmtree(path, ignore_errors=True)
 
 
-def load_csv_data(file_name):
-    data_output = []
-    file = open(file_name, "r+", encoding="utf-8")
-    data = csv.reader(file)
-    for row in data:
-        for i in range(0, len(row)):
-            if row[i].isnumeric():
-                row[i] = float(row[i])
-        data_output.append(row)
-    file.close()
-    return data_output
-
-
 def check_repo_data(dst, url, start_date="2020-03-22"):
     if not os.path.exists(dst):
         for folder in os.listdir(os.getcwd()):
             if os.path.isdir(folder) and ".idea" not in folder and ".git" not in folder and "data" not in folder:
                 delete_folder(os.getcwd() + os.sep + folder)
-        os.makedirs(os.getcwd() + os.sep + "data")
+        if not os.path.exists(os.getcwd() + os.sep + "data"): os.makedirs(os.getcwd() + os.sep + "data")
         if not os.path.isdir(dst): os.mkdir(dst)
         response = requests.get(url)
         text_list = response.text.split('\n')
@@ -60,7 +47,7 @@ def check_repo_data(dst, url, start_date="2020-03-22"):
             if date > start_date:
                 response = requests.get(item)
                 f = open(dst + os.sep + date + ".csv", "w", encoding="utf-8")
-                f.write(response.text)
+                f.write(response.text.replace("\r\n","\n"))
                 f.flush()
                 f.close()
 
@@ -78,9 +65,22 @@ def check_repo_data(dst, url, start_date="2020-03-22"):
             if date > max(dates):
                 response = requests.get(item)
                 f = open(dst + os.sep + date + ".csv", "w", encoding="utf-8")
-                f.write(response.text)
+                f.write(response.text.replace("\r\n","\n"))
                 f.flush()
                 f.close()
+
+
+def load_csv_data(file_path):
+    data_output = []
+    file = open(file_path, "r+", encoding="utf-8")
+    data = csv.reader(file)
+    for row in data:
+        for i in range(0, len(row)):
+            if row[i].isnumeric():
+                row[i] = float(row[i])
+        data_output.append(row)
+    file.close()
+    return data_output
 
 
 def load_data(path, start_date="2020-03-22"):
@@ -119,11 +119,9 @@ if __name__ == "__main__":
     print("Checking COVID-19 GIT REPO data...")
     check_repo_data(nCoV2019_CSSE_data_path, nCoV2019_CSSE_data_url)
 
-    print("Loading COVID-19 Locations data...")
-    location_data = load_data(nCoV2019_CSSE_data_path, "2020-03-22")
-
-    print("Creating COVID-19 Locations Data Frames...")
-    location_data_frame = to_data_frame(location_data)
-
-    print("Generating COVID-19 Locations Sqlite DB...")
-    df2db("data" + os.sep + "covid19.db", "locations", location_data_frame)
+    # print("Loading COVID-19 Locations data...")
+    # location_data = load_data(nCoV2019_CSSE_data_path, "2020-03-22")
+    # print("Creating COVID-19 Locations Data Frames...")
+    # location_data_frame = to_data_frame(location_data)
+    # print("Generating COVID-19 Locations Sqlite DB...")
+    # df2db("data" + os.sep + "covid19.db", "locations", location_data_frame)
