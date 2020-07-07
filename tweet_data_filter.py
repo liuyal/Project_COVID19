@@ -5,11 +5,7 @@ import datetime
 import shutil
 import stat
 import threading
-import random
-import tweepy
 import csv
-import requests
-import queue
 import spacy
 from spacy_langdetect import LanguageDetector
 
@@ -41,7 +37,7 @@ def load_csv_data(file_directory):
     return data_output
 
 
-def language_filter_mt_helper(output_path , date, data_list):
+def language_filter_mt_helper(output_path, date, data_list):
     sys.stdout.write("Processing [" + date + "]...\n")
     file = open(output_path + os.sep + date + ".csv", "a+", encoding='utf-8')
     for line in data_list:
@@ -65,7 +61,6 @@ def tweet_language_filter(output_path, tweet_data):
     [item.join() for item in thread_list]
 
 
-
 if __name__ == "__main__":
     nlp = spacy.load("en_core_web_sm")
     nlp.add_pipe(LanguageDetector(), name='language_detector', last=True)
@@ -75,5 +70,4 @@ if __name__ == "__main__":
     filtered_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_filtered_tweets"
 
     tweet_data = load_csv_data(hydrate_directory)
-
     tweet_data_filtered = tweet_language_filter(filtered_directory, tweet_data)
