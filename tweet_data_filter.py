@@ -4,6 +4,7 @@ import time
 import datetime
 import shutil
 import stat
+import queue
 import threading
 import csv
 import spacy
@@ -37,26 +38,30 @@ def load_csv_data(file_directory):
     return data_output
 
 
-def language_filter_mt_helper(output_path, date, data_list):
+def language_filter_mt_helper(output_directory, date, data_list):
     sys.stdout.write("Processing [" + date + "]...\n")
-    file = open(output_path + os.sep + date + ".csv", "a+", encoding='utf-8')
+    file = open(output_directory + os.sep + date + ".csv", "a+", encoding='utf-8')
+    file.truncate(0)
     for line in data_list:
-        doc = nlp(line[3])
-        result = doc._.language
-        if (result["language"] == 'en' and result["score"] > 0.5) or 'text' == line[3]:
-            file.write(",".join(str(i) for i in line) + "\n")
-            file.flush()
-            sys.stdout.write("[" + date + "] " + ",".join(str(i) for i in line) + "\n")
+        try:
+            doc = nlp(line[3])
+            result = doc._.language
+            if (result["language"] == 'en' and result["score"] > 0.5) or 'text' == line[3]:
+                sys.stdout.write("[" + date + "] " + ",".join(str(i) for i in line) + "\n")
+                file.write(",".join(str(i) for i in line) + "\n")
+                file.flush()
+        except Exception as e:
+            sys.stdout.write("ERROR: " + str(e))
     file.close()
     sys.stdout.write(date + " Complete!\n")
 
 
-def tweet_language_filter(output_path, tweet_data):
-    delete_folder(output_path)
-    os.mkdir(output_path)
+def tweet_language_filter(output_directory, tweet_data):
+    delete_folder(output_directory)
+    os.mkdir(output_directory)
     thread_list = []
     for date in list(tweet_data.keys()):
-        thread_list.append(threading.Thread(target=language_filter_mt_helper, args=(output_path, date, list(tweet_data[date]))))
+        thread_list.append(threading.Thread(target=language_filter_mt_helper, args=(output_directory, date, list(tweet_data[date]))))
     [item.start() for item in thread_list]
     [item.join() for item in thread_list]
 
@@ -70,4 +75,4 @@ if __name__ == "__main__":
     filtered_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_filtered_tweets"
 
     tweet_data = load_csv_data(hydrate_directory)
-    tweet_data_filtered = tweet_language_filter(filtered_directory, tweet_data)
+    tweet_language_filter(filtered_directory, tweet_data)

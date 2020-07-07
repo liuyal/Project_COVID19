@@ -153,7 +153,7 @@ def hydrate(id_log, hydrate_directory, api, start_date="2020-03-22", n=10):
                 data.append(str(extended_tweet))
                 data.append(str(retweeted_status))
                 data.append(str(quoted_status))
-                data[3] = text.replace("\n", " ").replace(",", " ")
+                data[3] = text.replace("\n", " ").replace(",", " ").replace("\r", "")
                 counter += 1
                 file.write(",".join(data) + "\n")
                 file.flush()
