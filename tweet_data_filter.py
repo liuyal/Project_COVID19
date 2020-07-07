@@ -41,26 +41,29 @@ def load_csv_data(file_directory):
     return data_output
 
 
-def language_filter_mt_helper(date, data_list, q):
+def language_filter_mt_helper(output_path , date, data_list):
     sys.stdout.write("Processing [" + date + "]...\n")
-    result_list = []
+    file = open(output_path + os.sep + date + ".csv", "a+", encoding='utf-8')
     for line in data_list:
         doc = nlp(line[3])
         result = doc._.language
         if (result["language"] == 'en' and result["score"] > 0.5) or 'text' == line[3]:
-            result_list.append(line)
-    q.put((date, result_list))
+            file.write(",".join(str(i) for i in line) + "\n")
+            file.flush()
+            sys.stdout.write("[" + date + "] " + ",".join(str(i) for i in line) + "\n")
+    file.close()
     sys.stdout.write(date + " Complete!\n")
 
 
-def tweet_language_filter(tweet_data):
-    output = queue.Queue()
+def tweet_language_filter(output_path, tweet_data):
+    delete_folder(output_path)
+    os.mkdir(output_path)
     thread_list = []
     for date in list(tweet_data.keys()):
-        thread_list.append(threading.Thread(target=language_filter_mt_helper, args=(date, list(tweet_data[date]), output)))
+        thread_list.append(threading.Thread(target=language_filter_mt_helper, args=(output_path, date, list(tweet_data[date]))))
     [item.start() for item in thread_list]
     [item.join() for item in thread_list]
-    return output.queue
+
 
 
 if __name__ == "__main__":
@@ -72,4 +75,5 @@ if __name__ == "__main__":
     filtered_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_filtered_tweets"
 
     tweet_data = load_csv_data(hydrate_directory)
-    tweet_data_filtered = tweet_language_filter(tweet_data)
+
+    tweet_data_filtered = tweet_language_filter(filtered_directory, tweet_data)
