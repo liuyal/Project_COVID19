@@ -67,7 +67,7 @@ def tweet_language_filter(output_directory, tweet_data):
 
 
 if __name__ == "__main__":
-    nlp = spacy.load("en_core_web_sm")
+    nlp = spacy.load("en")
     nlp.add_pipe(LanguageDetector(), name='language_detector', last=True)
 
     tweet_id_repo = r"https://github.com/echen102/COVID-19-TweetIDs"
