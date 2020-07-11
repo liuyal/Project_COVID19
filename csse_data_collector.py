@@ -117,11 +117,12 @@ if __name__ == "__main__":
     nCoV2019_CSSE_data_path = os.getcwd() + os.sep + "data" + os.sep + nCoV2019_CSSE_repo.split('/')[-1].split('.')[0].lower().replace('-', '_') + "_location_data"
 
     print("Checking COVID-19 GIT REPO data...")
-    check_repo_data(nCoV2019_CSSE_data_path, nCoV2019_CSSE_data_url)
+    # check_repo_data(nCoV2019_CSSE_data_path, nCoV2019_CSSE_data_url)
 
     # print("Loading COVID-19 Locations data...")
-    # location_data = load_data(nCoV2019_CSSE_data_path, "2020-03-22")
+    location_data = load_data(nCoV2019_CSSE_data_path, "2020-03-22")
     # print("Creating COVID-19 Locations Data Frames...")
-    # location_data_frame = to_data_frame(location_data)
+    location_data_frame = to_data_frame(location_data)
     # print("Generating COVID-19 Locations Sqlite DB...")
-    # df2db("data" + os.sep + "covid19.db", "locations", location_data_frame)
+    df2db("data" + os.sep + "covid19.db", "locations", location_data_frame)
+
