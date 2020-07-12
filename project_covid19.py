@@ -18,20 +18,35 @@ import copy
 import queue
 import re
 import csv
+import re
+import string
+import random
 import sqlite3
 import itertools
 import collections
 import langdetect
 import numpy as np
 import pandas as pd
+
 import gensim
 from gensim.utils import simple_preprocess
 from gensim.parsing.preprocessing import STOPWORDS
+
 import spacy
 from spacy_langdetect import LanguageDetector
+
 import nltk
 from nltk.stem.porter import *
-from nltk.stem import WordNetLemmatizer, SnowballStemmer
+from nltk.stem import WordNetLemmatizer
+from nltk.stem import SnowballStemmer
+from nltk.stem.wordnet import WordNetLemmatizer
+from nltk.corpus import twitter_samples
+from nltk.corpus import stopwords
+from nltk.tag import pos_tag
+from nltk.tokenize import word_tokenize
+from nltk import FreqDist
+from nltk import classify
+from nltk import NaiveBayesClassifier
 
 
 def print_header(path):
@@ -102,22 +117,78 @@ def language_process(raw_text, nlp, words):
     doc = nlp(processed_text.lower())
     # Tokenize text and remove words that are less than 3 letters and stop words
     output_words = [token.text for token in doc if token.is_stop is not True and token.is_punct is not True]
-    output_words = [letters for letters in output_words if len(letters) > 2]
+    output_tokens = [letters for letters in output_words if len(letters) > 2]
     word_collection = collections.Counter(output_words)
-    return word_collection
+    return output_tokens, word_collection
 
 
-def tokenize_mt_wrapper(data, nlp, words):
+def remove_noise(tweet_tokens, stop_words=()):
+    cleaned_tokens = []
+    for token, tag in pos_tag(tweet_tokens):
+        token = re.sub('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+#]|[!*\(\),]|''(?:%[0-9a-fA-F][0-9a-fA-F]))+', '', token)
+        token = re.sub("(@[A-Za-z0-9_]+)", "", token)
+        if tag.startswith("NN"):
+            pos = 'n'
+        elif tag.startswith('VB'):
+            pos = 'v'
+        else:
+            pos = 'a'
+        lemmatizer = WordNetLemmatizer()
+        token = lemmatizer.lemmatize(token, pos)
+        if len(token) > 0 and token not in string.punctuation and token.lower() not in stop_words:
+            cleaned_tokens.append(token.lower())
+    return cleaned_tokens
+
+
+def tweet_model_generator(cleaned_tokens_list):
+    for tweet_tokens in cleaned_tokens_list:
+        yield dict([token, True] for token in tweet_tokens)
+
+
+def sentiment_analyzer_mt_wrapper(date, data, nlp, words, classifier):
+    result_list = []
     for line in data:
-        tokens = language_process(line[3], nlp, words)
-        print(tokens)
+        if line[3] != "text":
+            # tokens, token_count = language_process(line[3], nlp, words)
+            custom_tweet = line[3]
+            custom_tokens = word_tokenize(custom_tweet)
+            tokens = remove_noise(custom_tokens, stopwords.words('english'))
+            result_list.append(classifier.classify(dict([token, True] for token in tokens)))
+    print(date, result_list.count("Positive"),  result_list.count("Negative"))
 
 
-def process_tweet_data(data_frame, nlp, words):
+# TODO: add threading
+def tweet_sentiment_analyzer(data_frame, nlp, words, classifier):
     # thread_list = []
-    # for date in data_frame:
-    #     tokenize_mt_wrapper(data_frame[date], nlp, words)
-    tokenize_mt_wrapper(data_frame["2020-04-01"], nlp, words)
+    for date in data_frame:
+        sentiment_analyzer_mt_wrapper(date, data_frame[date], nlp, words, classifier)
+
+
+# TODO: better training data
+def create_trainer_model():
+    positive_cleaned_tokens_list = []
+    negative_cleaned_tokens_list = []
+
+    stop_words = stopwords.words('english')
+    positive_tweet_tokens = twitter_samples.tokenized('positive_tweets.json')
+    negative_tweet_tokens = twitter_samples.tokenized('negative_tweets.json')
+
+    for tokens in positive_tweet_tokens:
+        positive_cleaned_tokens_list.append(remove_noise(tokens, stop_words))
+    for tokens in negative_tweet_tokens:
+        negative_cleaned_tokens_list.append(remove_noise(tokens, stop_words))
+
+    positive_tokens_model = tweet_model_generator(positive_cleaned_tokens_list)
+    negative_tokens_model = tweet_model_generator(negative_cleaned_tokens_list)
+
+    positive_dataset = [(tweet_dict, "Positive") for tweet_dict in positive_tokens_model]
+    negative_dataset = [(tweet_dict, "Negative") for tweet_dict in negative_tokens_model]
+
+    train_data = positive_dataset + negative_dataset
+    random.shuffle(train_data)
+
+    classifier = NaiveBayesClassifier.train(train_data)
+    return classifier
 
 
 if __name__ == "__main__":
@@ -129,7 +200,6 @@ if __name__ == "__main__":
     np.random.seed(2020)
     nlp = spacy.load("en")
     nlp.add_pipe(LanguageDetector(), name='language_detector', last=True)
-    nltk.download('wordnet')
     words = set(nltk.corpus.words.words())
 
     print("Loading COVID-19 datasets...")
@@ -143,6 +213,7 @@ if __name__ == "__main__":
     # process_location_data(location_data_frame)
 
     print("Processing Tweet Data...")
-    process_tweet_data(tweet_data, nlp, words)
+    classifier = create_trainer_model()
+    tweet_sentiment_analyzer(tweet_data, nlp, words, classifier)
 
     print()
