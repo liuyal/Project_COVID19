@@ -25,6 +25,7 @@ import sqlite3
 import itertools
 import collections
 import langdetect
+import pickle
 import numpy as np
 import pandas as pd
 
@@ -97,6 +98,7 @@ def to_data_frame(data):
     return data_frame
 
 
+# TODO: save result
 def process_location_data(data_frame):
     daily_us = data_frame.loc[data_frame["Country_Region"] == "US"]
     aggregate = {"Confirmed": "sum", "Deaths": "sum", "Recovered": "sum"}
@@ -154,7 +156,7 @@ def sentiment_analyzer_mt_wrapper(date, data, nlp, words, classifier):
             custom_tokens = word_tokenize(custom_tweet)
             tokens = remove_noise(custom_tokens, stopwords.words('english'))
             result_list.append(classifier.classify(dict([token, True] for token in tokens)))
-    print(date, result_list.count("Positive"),  result_list.count("Negative"))
+    print(date, result_list.count("Positive"), result_list.count("Negative"))
 
 
 # TODO: add threading
@@ -164,19 +166,18 @@ def tweet_sentiment_analyzer(data_frame, nlp, words, classifier):
         sentiment_analyzer_mt_wrapper(date, data_frame[date], nlp, words, classifier)
 
 
-# TODO: better training data
+
 def create_trainer_model():
     positive_cleaned_tokens_list = []
     negative_cleaned_tokens_list = []
 
-    stop_words = stopwords.words('english')
     positive_tweet_tokens = twitter_samples.tokenized('positive_tweets.json')
     negative_tweet_tokens = twitter_samples.tokenized('negative_tweets.json')
 
     for tokens in positive_tweet_tokens:
-        positive_cleaned_tokens_list.append(remove_noise(tokens, stop_words))
+        positive_cleaned_tokens_list.append(remove_noise(tokens, stopwords.words('english')))
     for tokens in negative_tweet_tokens:
-        negative_cleaned_tokens_list.append(remove_noise(tokens, stop_words))
+        negative_cleaned_tokens_list.append(remove_noise(tokens, stopwords.words('english')))
 
     positive_tokens_model = tweet_model_generator(positive_cleaned_tokens_list)
     negative_tokens_model = tweet_model_generator(negative_cleaned_tokens_list)
@@ -191,29 +192,91 @@ def create_trainer_model():
     return classifier
 
 
+def create_trainer_model_B(training_data_path):
+    file = open(training_data_path, "r", encoding='utf-8')
+    raw_csv = csv.reader(file)
+    raw_training_data = []
+    for row in raw_csv: raw_training_data.append(row)
+    header = raw_training_data.pop(0)
+    file.close()
+
+    positive_tweet_tokens = []
+    neutral_tweet_tokens = []
+    negative_tweet_tokens = []
+
+    for line in raw_training_data:
+        positive_score = line[2]
+        neutral_score = line[3]
+        negative_score = line[4]
+        tokens = nltk.word_tokenize(line[1])
+        if positive_score > neutral_score and positive_score > negative_score:
+            positive_tweet_tokens.append(tokens)
+        elif neutral_score > positive_score and neutral_score > negative_score:
+            neutral_tweet_tokens.append(tokens)
+        elif negative_score > positive_score and negative_score > neutral_score:
+            negative_tweet_tokens.append(tokens)
+
+    positive_cleaned_tokens_list = []
+    neutral_cleaned_tokens_list = []
+    negative_cleaned_tokens_list = []
+
+    for tokens in positive_tweet_tokens:
+        positive_cleaned_tokens_list.append(remove_noise(tokens, stopwords.words('english')))
+    for tokens in neutral_tweet_tokens:
+        neutral_cleaned_tokens_list.append(remove_noise(tokens, stopwords.words('english')))
+    for tokens in negative_tweet_tokens:
+        negative_cleaned_tokens_list.append(remove_noise(tokens, stopwords.words('english')))
+
+    positive_tokens_model = tweet_model_generator(positive_cleaned_tokens_list)
+    neutral_tokens_model = tweet_model_generator(neutral_cleaned_tokens_list)
+    negative_tokens_model = tweet_model_generator(negative_cleaned_tokens_list)
+
+    positive_dataset = [(tweet_dict, "Positive") for tweet_dict in positive_tokens_model]
+    neutral_dataset = [(tweet_dict, "Neutral") for tweet_dict in neutral_tokens_model]
+    negative_dataset = [(tweet_dict, "Negative") for tweet_dict in negative_tokens_model]
+
+    train_data = positive_dataset + neutral_dataset + negative_dataset
+    classifier = NaiveBayesClassifier.train(train_data)
+
+    if not os.path.exists(os.getcwd() + os.sep  + "data" + os.sep + "classifier" ):
+        os.mkdir(os.getcwd() + os.sep  + "data" + os.sep + "classifier" )
+    f = open(os.getcwd() + os.sep  + "data" + os.sep + "classifier"  + os.sep + "NaiveBayesClassifier.pickle", 'wb')
+    pickle.dump(classifier, f)
+    f.close()
+
+    return classifier
+
+
 if __name__ == "__main__":
     # print_header(os.getcwd() + os.sep + "header.txt")
 
     location_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_location_data"
     tweet_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_filtered_tweets"
 
-    np.random.seed(2020)
     nlp = spacy.load("en")
-    nlp.add_pipe(LanguageDetector(), name='language_detector', last=True)
     words = set(nltk.corpus.words.words())
 
-    print("Loading COVID-19 datasets...")
+    print("Loading COVID-19 datasets...", end='')
     # location_data = load_csv_data(location_directory)
     tweet_data = load_csv_data(tweet_directory)
+    print("[Complete]")
 
+    print("Creating Data Frames...", end='')
     # location_data_frame = to_data_frame(location_data)
     # tweet_data_frame = to_data_frame(tweet_data)
+    print("[Complete]")
 
-    # print("Processing Location Data...")
+    print("Processing Location Data...", end='')
     # process_location_data(location_data_frame)
+    print("[Complete]")
 
-    print("Processing Tweet Data...")
-    classifier = create_trainer_model()
+    print("Training Classifier Model...", end='')
+    # classifier = create_trainer_model()
+    classifier = create_trainer_model_B(os.getcwd() + os.sep + "data" + os.sep + "training_data_A" + os.sep + "training_data.csv")
+    print("[Complete]")
+
+    print("Processing Sentiment Analyzer...", end='')
     tweet_sentiment_analyzer(tweet_data, nlp, words, classifier)
+    print("[Complete]")
 
-    print()
+    print("EOS")
