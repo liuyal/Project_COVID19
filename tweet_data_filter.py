@@ -11,15 +11,6 @@ import spacy
 from spacy_langdetect import LanguageDetector
 
 
-def delete_folder(path):
-    for root, dirs, files in os.walk(path):
-        for dir in dirs:
-            os.chmod(os.path.join(root, dir), stat.S_IRWXU)
-        for file in files:
-            os.chmod(os.path.join(root, file), stat.S_IRWXU)
-    shutil.rmtree(path, ignore_errors=True)
-
-
 def load_csv_data(file_directory):
     data_output = {}
     for item in os.listdir(file_directory):
@@ -57,13 +48,22 @@ def language_filter_mt_helper(output_directory, date, data_list):
 
 
 def tweet_language_filter(output_directory, tweet_data):
-    delete_folder(output_directory)
-    os.mkdir(output_directory)
+    if not os.path.exists(output_directory): os.mkdir(output_directory)
     thread_list = []
     for date in list(tweet_data.keys()):
         thread_list.append(threading.Thread(target=language_filter_mt_helper, args=(output_directory, date, list(tweet_data[date]))))
     [item.start() for item in thread_list]
     [item.join() for item in thread_list]
+
+
+def check_updated(hydrate_directory, filtered_directory, data):
+    hydrate_dates = os.listdir(hydrate_directory)
+    filtered_directory = os.listdir(filtered_directory)
+    difference = set(hydrate_dates).difference(set(filtered_directory))
+    updated_data = {}
+    for item in list(difference):
+        updated_data[item.replace(".csv", "")] = data[item.replace(".csv", "")]
+    return updated_data
 
 
 if __name__ == "__main__":
@@ -75,4 +75,5 @@ if __name__ == "__main__":
     filtered_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_filtered_tweets"
 
     tweet_data = load_csv_data(hydrate_directory)
-    tweet_language_filter(filtered_directory, tweet_data)
+    tweet_data_updated = check_updated(hydrate_directory, filtered_directory, tweet_data)
+    tweet_language_filter(filtered_directory, tweet_data_updated)
