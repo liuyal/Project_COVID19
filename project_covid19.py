@@ -68,6 +68,10 @@ def load_nltk_packets():
     nltk.download("averaged_perceptron_tagger")
 
 
+def dataset_check():
+    return 0
+
+
 def delete_folder(path):
     for root, dirs, files in os.walk(path):
         for dir in dirs:
@@ -156,26 +160,7 @@ def tweet_model_generator(cleaned_tokens_list):
         yield dict([token, True] for token in tweet_tokens)
 
 
-def sentiment_analyzer_mt_wrapper(date, data, nlp, words, classifier):
-    result_list = []
-    for line in data:
-        if line[3] != "text":
-            # tokens, token_count = language_process(line[3], nlp, words)
-            custom_tweet = line[3]
-            custom_tokens = word_tokenize(custom_tweet)
-            tokens = remove_noise(custom_tokens, stopwords.words('english'))
-            result_list.append(classifier.classify(dict([token, True] for token in tokens)))
-    print(date, result_list.count("Positive"), result_list.count("Negative"))
-
-
-# TODO: add threading
-def tweet_sentiment_analyzer(data_frame, nlp, words, classifier):
-    # thread_list = []
-    for date in data_frame:
-        sentiment_analyzer_mt_wrapper(date, data_frame[date], nlp, words, classifier)
-
-
-def create_trainer_model():
+def create_trainer_model_A():
     positive_cleaned_tokens_list = []
     negative_cleaned_tokens_list = []
 
@@ -200,94 +185,99 @@ def create_trainer_model():
     return classifier
 
 
-def create_trainer_model_B(training_data_path, n_threads=100):
+def create_trainer_model_B(training_data_path, model_path, training_size=500000):
+    if os.path.exists(model_path):
+        loaded_model = pickle.load(open(model_path, 'rb'))
+        return loaded_model
+
     file = open(training_data_path, "r", encoding='utf-8')
     raw_csv = csv.reader(file)
     raw_training_data = []
     for row in raw_csv: raw_training_data.append(row)
-    header = raw_training_data.pop(0)
     file.close()
 
-    positive_tweet_tokens = []
-    neutral_tweet_tokens = []
-    negative_tweet_tokens = []
+    raw_training_data.pop(0)
+    random.shuffle(raw_training_data)
+
+    if training_size > len(raw_training_data):
+        raw_training_data = random.sample(raw_training_data, len(raw_training_data))
+    else:
+        raw_training_data = random.sample(raw_training_data, training_size)
+
+    negative_cleaned_tokens_list = []
+    neutral_cleaned_tokens_list = []
+    positive_cleaned_tokens_list = []
 
     pbar = tqdm(total=len(raw_training_data))
     for line in raw_training_data:
-        positive_score = line[3]
+        negative_score = line[3]
         neutral_score = line[4]
-        negative_score = line[5]
+        positive_score = line[5]
         tokens = nltk.word_tokenize(line[2])
-        if positive_score > neutral_score and positive_score > negative_score:
-            positive_tweet_tokens.append(tokens)
+        if negative_score > positive_score and negative_score > neutral_score:
+            negative_cleaned_tokens_list.append(remove_noise(tokens, stopwords.words('english')))
         elif neutral_score > positive_score and neutral_score > negative_score:
-            neutral_tweet_tokens.append(tokens)
-        elif negative_score > positive_score and negative_score > neutral_score:
-            negative_tweet_tokens.append(tokens)
+            neutral_cleaned_tokens_list.append(remove_noise(tokens, stopwords.words('english')))
+        elif positive_score > neutral_score and positive_score > negative_score:
+            positive_cleaned_tokens_list.append(remove_noise(tokens, stopwords.words('english')))
         pbar.update(1)
     pbar.close()
 
-    positive_cleaned_tokens_list = []
-    neutral_cleaned_tokens_list = []
-    negative_cleaned_tokens_list = []
-
-    pbar = tqdm(total=len(positive_tweet_tokens))
-    for tokens in positive_tweet_tokens:
-        positive_cleaned_tokens_list.append(remove_noise(tokens, stopwords.words('english')))
-        pbar.update(1)
-    pbar.close()
-    pbar = tqdm(total=len(neutral_tweet_tokens))
-    for tokens in neutral_tweet_tokens:
-        neutral_cleaned_tokens_list.append(remove_noise(tokens, stopwords.words('english')))
-        pbar.update(1)
-    pbar.close()
-    pbar = tqdm(total=len(negative_tweet_tokens))
-    for tokens in negative_tweet_tokens:
-        negative_cleaned_tokens_list.append(remove_noise(tokens, stopwords.words('english')))
-        pbar.update(1)
-    pbar.close()
-
-    positive_tokens_model = tweet_model_generator(positive_cleaned_tokens_list)
-    neutral_tokens_model = tweet_model_generator(neutral_cleaned_tokens_list)
     negative_tokens_model = tweet_model_generator(negative_cleaned_tokens_list)
+    neutral_tokens_model = tweet_model_generator(neutral_cleaned_tokens_list)
+    positive_tokens_model = tweet_model_generator(positive_cleaned_tokens_list)
 
-    positive_dataset = []
-    neutral_dataset = []
     negative_dataset = []
+    neutral_dataset = []
+    positive_dataset = []
 
-    pbar = tqdm(total=len(positive_tokens_model))
-    for tweet_dict in positive_tokens_model:
-        positive_dataset.append((tweet_dict, "Positive"))
-        pbar.update(1)
-    pbar.close()
-
-    pbar = tqdm(total=len(neutral_tokens_model))
-    for tweet_dict in neutral_tokens_model:
-        neutral_dataset.append((tweet_dict, "Neutral"))
-        pbar.update(1)
-    pbar.close()
-
-    pbar = tqdm(total=len(negative_tokens_model))
     for tweet_dict in negative_tokens_model:
         negative_dataset.append((tweet_dict, "Negative"))
-        pbar.update(1)
-    pbar.close()
+    for tweet_dict in neutral_tokens_model:
+        neutral_dataset.append((tweet_dict, "Neutral"))
+    for tweet_dict in positive_tokens_model:
+        positive_dataset.append((tweet_dict, "Positive"))
 
-    train_data = positive_dataset + neutral_dataset + negative_dataset
+    train_data = negative_dataset + neutral_dataset + positive_dataset
     classifier = NaiveBayesClassifier.train(train_data)
 
     if not os.path.exists(os.getcwd() + os.sep + "data" + os.sep + "classifier"):
         os.mkdir(os.getcwd() + os.sep + "data" + os.sep + "classifier")
-    f = open(os.getcwd() + os.sep + "data" + os.sep + "classifier" + os.sep + "NaiveBayesClassifier.pickle", 'wb')
+    f = open(model_path, 'wb')
     pickle.dump(classifier, f)
     f.close()
 
     return classifier
 
 
+def create_trainer_model_C(training_data_path, model_path):
+    return 0
+
+
+# TODO: save result
+def sentiment_analyzer_mt_wrapper(date, data, nlp, words, classifier):
+    result_list = []
+    for line in data:
+        if line[3] != "text":
+            # tokens, token_count = language_process(line[3], nlp, words)
+            custom_tweet = line[3]
+            custom_tokens = word_tokenize(custom_tweet)
+            tokens = remove_noise(custom_tokens, stopwords.words('english'))
+            result_list.append(classifier.classify(dict([token, True] for token in tokens)))
+
+    print(date, result_list.count("Negative"), result_list.count("Neutral"), result_list.count("Positive"))
+
+
+def tweet_sentiment_analyzer(data_frame, nlp, words, classifier):
+    # thread_list = []
+    for date in data_frame:
+        sentiment_analyzer_mt_wrapper(date, data_frame[date], nlp, words, classifier)
+
+
 if __name__ == "__main__":
     # print_header(os.getcwd() + os.sep + "header.txt")
     load_nltk_packets()
+    dataset_check()
     location_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_location_data"
     tweet_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_filtered_tweets"
 
@@ -309,12 +299,15 @@ if __name__ == "__main__":
     print("[Complete]")
 
     print("Training Tweet Classifier Model...")
-    # classifier = create_trainer_model()
-    classifier = create_trainer_model_B(os.getcwd() + os.sep + "data" + os.sep + "training_data_A" + os.sep + "training_data.csv")
-    # classifier = create_trainer_model_C()
+    training_data_path = os.getcwd() + os.sep + "data" + os.sep + "training_data_t4sa" + os.sep + "training_data_t4sa.csv"
+    model_path = os.getcwd() + os.sep + "data" + os.sep + "classifier" + os.sep + "NaiveBayesClassifier_1M.pickle"
+    # classifier = create_trainer_model_A()
+    classifier = create_trainer_model_B(training_data_path, model_path, 9999999)
+    # classifier = create_trainer_model_C(training_data_path, model_path)
 
-    print("Processing Sentiment Analyzer...", end='')
+    # TODO: Test accuracy on tweet example
+
+    print("Processing Sentiment Analyzer...", end='\n')
     tweet_sentiment_analyzer(tweet_data, nlp, words, classifier)
-    print("[Complete]")
 
     print("EOS")

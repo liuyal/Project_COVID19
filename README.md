@@ -26,7 +26,7 @@ The relationship between trending social media topics and reported number of con
 - [3] R. Holmes, “Is COVID-19 Social Media's Levelling Up Moment?” Forbes, 24-Apr-2020. [Online]. Available: https://www.forbes.com/sites/ryanholmes/2020/04/24/is-covid-19-social-medias-levelling-up-moment/#93725e96c606. [Accessed: 25-Jun-2020].
 - [4] E. Chen, K. Lerman, E. Ferrara, I. S. Institute, C. A. C. C. A. E. Ferrara, C. Author, C. C. A. E. Ferrara, Close, and L. authors..., “Tracking Social Media Discourse About the COVID-19 Pandemic: Development of a Public Coronavirus Twitter Data Set,” JMIR Public Health and Surveillance. [Online]. Available: https://publichealth.jmir.org/2020/2/e19273/. [Accessed: 02-Jul-2020].
 
-
 ## Dataset Links
 - [Johns Hopkins University (CSSE) COVID-19 Data Repository](https://github.com/CSSEGISandData/COVID-19)
 - [Daily COVID-19 Twitter ID dataset](https://github.com/echen102/COVID-19-TweetIDs)
+- [T4SA Twitter Training Data](http://www.t4sa.it/#experimental-results)
