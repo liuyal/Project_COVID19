@@ -44,10 +44,10 @@ def check_repo_data(dst, url, start_date="2020-03-22"):
                 csv_list.append(csv_url.replace("blob/", ""))
         for item in csv_list:
             date = datetime.datetime.strptime(item.split('/')[-1].split('.')[0], '%m-%d-%Y').strftime('%Y-%m-%d')
-            if date > start_date:
+            if date >= start_date:
                 response = requests.get(item)
                 f = open(dst + os.sep + date + ".csv", "w", encoding="utf-8")
-                f.write(response.text.replace("\r\n","\n"))
+                f.write(response.text.replace("\r\n", "\n"))
                 f.flush()
                 f.close()
 
@@ -62,10 +62,10 @@ def check_repo_data(dst, url, start_date="2020-03-22"):
                 csv_list.append(csv_url.replace("blob/", ""))
         for item in csv_list:
             date = datetime.datetime.strptime(item.split('/')[-1].split('.')[0], '%m-%d-%Y').strftime('%Y-%m-%d')
-            if date > max(dates):
+            if date >= max(dates):
                 response = requests.get(item)
                 f = open(dst + os.sep + date + ".csv", "w", encoding="utf-8")
-                f.write(response.text.replace("\r\n","\n"))
+                f.write(response.text.replace("\r\n", "\n"))
                 f.flush()
                 f.close()
 
@@ -78,6 +78,10 @@ def load_csv_data(file_path):
         for i in range(0, len(row)):
             if row[i].isnumeric():
                 row[i] = float(row[i])
+            elif row[i] == "":
+                row[i] = 0.0
+            if 'Country/Region' == row[i]:
+                row[i] = 'Country_Region'
         data_output.append(row)
     file.close()
     return data_output
@@ -95,12 +99,18 @@ def load_data(path, start_date="2020-03-22"):
 
 
 def to_data_frame(data):
+    column_keywords = ['Date', 'Country_Region', 'Confirmed', 'Deaths', 'Recovered']
     data_frame_list = []
     for date in list(data.keys()):
         daily_data = data[date]
         header = daily_data.pop(0)
         df = pd.DataFrame(daily_data, columns=header)
         df.insert(0, "Date", [date] * len(daily_data), True)
+        drop_list = []
+        for item in df.columns:
+            if item not in column_keywords:
+                drop_list.append(item)
+        df.drop(drop_list, axis=1, inplace=True)
         data_frame_list.append(df)
     return data_frame_list
 
@@ -117,12 +127,13 @@ if __name__ == "__main__":
     nCoV2019_CSSE_data_path = os.getcwd() + os.sep + "data" + os.sep + nCoV2019_CSSE_repo.split('/')[-1].split('.')[0].lower().replace('-', '_') + "_location_data"
 
     print("Checking COVID-19 GIT REPO data...")
-    # check_repo_data(nCoV2019_CSSE_data_path, nCoV2019_CSSE_data_url)
+    check_repo_data(nCoV2019_CSSE_data_path, nCoV2019_CSSE_data_url, "2020-01-01")
 
-    # print("Loading COVID-19 Locations data...")
-    location_data = load_data(nCoV2019_CSSE_data_path, "2020-03-22")
-    # print("Creating COVID-19 Locations Data Frames...")
+    print("Loading COVID-19 Locations data...")
+    location_data = load_data(nCoV2019_CSSE_data_path, "2020-01-01")
+
+    print("Creating COVID-19 Locations Data Frames...")
     location_data_frame = to_data_frame(location_data)
-    # print("Generating COVID-19 Locations Sqlite DB...")
-    df2db("data" + os.sep + "covid19.db", "locations", location_data_frame)
 
+    print("Generating COVID-19 Locations Sqlite DB...")
+    df2db("data" + os.sep + "covid19.db", "locations", location_data_frame)

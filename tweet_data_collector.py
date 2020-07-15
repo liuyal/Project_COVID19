@@ -43,6 +43,16 @@ def get_token(path):
     return tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 
 
+def id_request(id, url_list, q, n=1):
+    id_list = []
+    for item in random.sample(url_list, n):
+        response = requests.get(item)
+        id_list = id_list + response.text.split('\n')
+        sys.stdout.write(id + " " + item + " " + "\n")
+    sys.stdout.write(id + " Complete!\n")
+    q.put((id, id_list))
+
+
 def curl_id(hydrate_directory, repo, start_date="2020-03-22", n=1):
     response = requests.get(repo)
     text_list = response.text.split('\n')
@@ -90,21 +100,11 @@ def curl_id(hydrate_directory, repo, start_date="2020-03-22", n=1):
     return list(q.queue)
 
 
-def id_request(id, url_list, q, n=1):
-    id_list = []
-    for item in random.sample(url_list, n):
-        response = requests.get(item)
-        id_list = id_list + response.text.split('\n')
-        sys.stdout.write(id + " " + item + " " + "\n")
-    sys.stdout.write(id + " Complete!\n")
-    q.put((id, id_list))
-
-
 def hydrate(id_log, hydrate_directory, api, start_date="2020-03-22", n=10):
     if not os.path.exists(os.getcwd() + os.sep + "data"): os.makedirs(os.getcwd() + os.sep + "data")
     if not os.path.exists(hydrate_directory): os.mkdir(hydrate_directory)
 
-    for date, id_list in id_log:
+    for date, id_list in sorted(id_log):
         counter = 0
         copy_list = copy.deepcopy(id_list)
         data_header = "index,id,create_at,text,user_name,verified,location,followers_count,extended,retweeted,quoted"
@@ -115,6 +115,7 @@ def hydrate(id_log, hydrate_directory, api, start_date="2020-03-22", n=10):
         while counter <= n and date > start_date:
             data = []
             random.shuffle(copy_list)
+            if len(copy_list) == 0: break
             id = copy_list.pop(0)
             try:
                 response = api.get_status(id)._json
@@ -159,6 +160,7 @@ def hydrate(id_log, hydrate_directory, api, start_date="2020-03-22", n=10):
                 file.flush()
             except Exception as e:
                 print("ERROR:", e)
+
         file.close()
         print(date, " hydrate Complete!")
 
@@ -168,10 +170,10 @@ if __name__ == "__main__":
     hydrate_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_hydrated_tweets"
 
     print("Curl COVID-19 GIT Tweet ID...")
-    id_list = curl_id(hydrate_directory, tweet_id_repo, "2020-03-22", 1)
+    id_list = curl_id(hydrate_directory, tweet_id_repo, "2020-01-01", 1)
 
     print("Loading Twitter API KEYs...")
     api = get_token("jerry.token")
 
     print("Hydrating COVID-19 Tweet text from ID...")
-    hydrate(id_list, hydrate_directory, api, "2020-03-22", 1000)
+    hydrate(id_list, hydrate_directory, api, "2020-01-01", 1000)
