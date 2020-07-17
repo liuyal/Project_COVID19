@@ -121,6 +121,15 @@ def df2db(db_name, table_name, df):
     data_frame.to_sql(table_name, db_connection, if_exists='replace', index=False)
 
 
+def process_location_data(data_frame, file_path):
+    df = pd.concat(data_frame, axis=0, join='outer', sort=False, ignore_index=False, keys=None, levels=None, names=None, verify_integrity=False, copy=True)
+    daily_us = df.loc[df["Country_Region"] == "US"]
+    aggregate = {"Confirmed": "sum", "Deaths": "sum", "Recovered": "sum"}
+    daily_us_total = daily_us.groupby("Date").agg(aggregate).reset_index()
+    daily_us_total.to_csv(file_path)
+    return daily_us_total
+
+
 if __name__ == "__main__":
     nCoV2019_CSSE_repo = r"https://github.com/CSSEGISandData/COVID-19.git"
     nCoV2019_CSSE_data_url = r"https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_daily_reports"
@@ -135,5 +144,8 @@ if __name__ == "__main__":
     print("Creating COVID-19 Locations Data Frames...")
     location_data_frame = to_data_frame(location_data)
 
+    print("Processing COVID-19 Locations Data Frames...")
+    process_location_data(location_data_frame, os.getcwd() + os.sep + "data" + os.sep + "daily_us_confirmed_cases.csv")
+
     print("Generating COVID-19 Locations Sqlite DB...")
-    df2db("data" + os.sep + "covid19.db", "locations", location_data_frame)
+    df2db("data" + os.sep + "covid19_csse_database.db", "locations", location_data_frame)

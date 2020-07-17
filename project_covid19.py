@@ -111,14 +111,6 @@ def to_data_frame(data):
     return data_frame
 
 
-# TODO: save result
-def process_location_data(data_frame):
-    daily_us = data_frame.loc[data_frame["Country_Region"] == "US"]
-    aggregate = {"Confirmed": "sum", "Deaths": "sum", "Recovered": "sum"}
-    daily_us_total = daily_us.groupby("Date").agg(aggregate).reset_index()
-    return daily_us_total
-
-
 def language_process(raw_text, nlp, words):
     # Functions are credited to TA Arjun Mahadevan
     url_pattern = re.compile(r'https://\S+|www\.\S+')
@@ -163,21 +155,16 @@ def tweet_model_generator(cleaned_tokens_list):
 def create_trainer_model_A():
     positive_cleaned_tokens_list = []
     negative_cleaned_tokens_list = []
-
     positive_tweet_tokens = twitter_samples.tokenized('positive_tweets.json')
     negative_tweet_tokens = twitter_samples.tokenized('negative_tweets.json')
-
     for tokens in positive_tweet_tokens:
         positive_cleaned_tokens_list.append(remove_noise(tokens, stopwords.words('english')))
     for tokens in negative_tweet_tokens:
         negative_cleaned_tokens_list.append(remove_noise(tokens, stopwords.words('english')))
-
     positive_tokens_model = tweet_model_generator(positive_cleaned_tokens_list)
     negative_tokens_model = tweet_model_generator(negative_cleaned_tokens_list)
-
     positive_dataset = [(tweet_dict, "Positive") for tweet_dict in positive_tokens_model]
     negative_dataset = [(tweet_dict, "Negative") for tweet_dict in negative_tokens_model]
-
     train_data = positive_dataset + negative_dataset
     random.shuffle(train_data)
 
@@ -198,7 +185,6 @@ def create_trainer_model_B(training_data_path, model_path, training_size=500000)
 
     raw_training_data.pop(0)
     random.shuffle(raw_training_data)
-
     if training_size > len(raw_training_data):
         raw_training_data = random.sample(raw_training_data, len(raw_training_data))
     else:
@@ -207,7 +193,6 @@ def create_trainer_model_B(training_data_path, model_path, training_size=500000)
     negative_cleaned_tokens_list = []
     neutral_cleaned_tokens_list = []
     positive_cleaned_tokens_list = []
-
     pbar = tqdm(total=len(raw_training_data))
     for line in raw_training_data:
         negative_score = line[3]
@@ -230,7 +215,6 @@ def create_trainer_model_B(training_data_path, model_path, training_size=500000)
     negative_dataset = []
     neutral_dataset = []
     positive_dataset = []
-
     for tweet_dict in negative_tokens_model:
         negative_dataset.append((tweet_dict, "Negative"))
     for tweet_dict in neutral_tokens_model:
@@ -250,11 +234,6 @@ def create_trainer_model_B(training_data_path, model_path, training_size=500000)
     return classifier
 
 
-def create_trainer_model_C(training_data_path, model_path):
-    return 0
-
-
-# TODO: save result
 def sentiment_analyzer_mt_wrapper(date, data, nlp, words, classifier):
     result_list = []
     for line in data:
@@ -264,14 +243,21 @@ def sentiment_analyzer_mt_wrapper(date, data, nlp, words, classifier):
             custom_tokens = word_tokenize(custom_tweet)
             tokens = remove_noise(custom_tokens, stopwords.words('english'))
             result_list.append(classifier.classify(dict([token, True] for token in tokens)))
+    return result_list
 
-    print(date, result_list.count("Negative"), result_list.count("Neutral"), result_list.count("Positive"))
 
-
-def tweet_sentiment_analyzer(data_frame, nlp, words, classifier):
-    # thread_list = []
+def tweet_sentiment_analyzer(data_frame, nlp, words, classifier, file_path):
+    file = open(file_path, "a+")
+    file.truncate(0)
+    file.write("date,Negative,Neutral,Positive\n")
+    file.close()
     for date in data_frame:
-        sentiment_analyzer_mt_wrapper(date, data_frame[date], nlp, words, classifier)
+        result_list = sentiment_analyzer_mt_wrapper(date, data_frame[date], nlp, words, classifier)
+        print(date, result_list.count("Negative"), result_list.count("Neutral"), result_list.count("Positive"))
+        file = open(file_path, "a+")
+        file.write(date + "," + str(result_list.count("Negative")) + "," + str(result_list.count("Neutral")) + "," + str(result_list.count("Positive")) + "\n")
+        file.flush()
+        file.close()
 
 
 if __name__ == "__main__":
@@ -285,29 +271,23 @@ if __name__ == "__main__":
     words = set(nltk.corpus.words.words())
 
     print("Loading COVID-19 datasets...", end='')
-    # location_data = load_csv_data(location_directory)
+    location_data = load_csv_data(location_directory)
     tweet_data = load_csv_data(tweet_directory)
     print("[Complete]")
 
     print("Creating Data Frames...", end='')
-    # location_data_frame = to_data_frame(location_data)
-    # tweet_data_frame = to_data_frame(tweet_data)
+    location_data_frame = to_data_frame(location_data)
+    tweet_data_frame = to_data_frame(tweet_data)
     print("[Complete]")
 
-    print("Processing Location Data...", end='')
-    # process_location_data(location_data_frame)
-    print("[Complete]")
-
-    print("Training Tweet Classifier Model...")
+    print("Training/Loading Tweet Classifier Model...")
     training_data_path = os.getcwd() + os.sep + "data" + os.sep + "training_data_t4sa" + os.sep + "training_data_t4sa.csv"
     model_path = os.getcwd() + os.sep + "data" + os.sep + "classifier" + os.sep + "NaiveBayesClassifier_1M.pickle"
-    # classifier = create_trainer_model_A()
     classifier = create_trainer_model_B(training_data_path, model_path, 9999999)
-    # classifier = create_trainer_model_C(training_data_path, model_path)
 
     # TODO: Test accuracy on tweet example
 
     print("Processing Sentiment Analyzer...", end='\n')
-    tweet_sentiment_analyzer(tweet_data, nlp, words, classifier)
+    tweet_sentiment_analyzer(tweet_data, nlp, words, classifier, os.getcwd() + os.sep + "data" + os.sep + "tweet_sentiment_result.csv")
 
     print("EOS")
