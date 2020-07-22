@@ -12,19 +12,16 @@ import sys
 import time
 import datetime
 import shutil
-import threading
 import stat
+import re
 import copy
 import queue
-import re
+import threading
+import itertools
 import csv
-import re
 import string
 import random
-import sqlite3
-import itertools
 import collections
-import langdetect
 import pickle
 import numpy as np
 import pandas as pd
@@ -36,20 +33,17 @@ from gensim.utils import simple_preprocess
 from gensim.parsing.preprocessing import STOPWORDS
 
 import spacy
-from spacy_langdetect import LanguageDetector
-
 import nltk
 from nltk.stem.porter import *
-from nltk.stem import WordNetLemmatizer
-from nltk.stem import SnowballStemmer
-from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.corpus import twitter_samples
 from nltk.corpus import stopwords
 from nltk.tag import pos_tag
 from nltk.tokenize import word_tokenize
+from nltk import NaiveBayesClassifier
+from nltk.stem import WordNetLemmatizer
+from nltk.stem import SnowballStemmer
 from nltk import FreqDist
 from nltk import classify
-from nltk import NaiveBayesClassifier
 
 
 def print_header(path):
@@ -157,26 +151,7 @@ def tweet_model_generator(cleaned_tokens_list):
         yield dict([token, True] for token in tweet_tokens)
 
 
-def create_trainer_model_A():
-    positive_cleaned_tokens_list = []
-    negative_cleaned_tokens_list = []
-    positive_tweet_tokens = twitter_samples.tokenized('positive_tweets.json')
-    negative_tweet_tokens = twitter_samples.tokenized('negative_tweets.json')
-    for tokens in positive_tweet_tokens:
-        positive_cleaned_tokens_list.append(remove_noise(tokens, stopwords.words('english')))
-    for tokens in negative_tweet_tokens:
-        negative_cleaned_tokens_list.append(remove_noise(tokens, stopwords.words('english')))
-    positive_tokens_model = tweet_model_generator(positive_cleaned_tokens_list)
-    negative_tokens_model = tweet_model_generator(negative_cleaned_tokens_list)
-    positive_dataset = [(tweet_dict, "Positive") for tweet_dict in positive_tokens_model]
-    negative_dataset = [(tweet_dict, "Negative") for tweet_dict in negative_tokens_model]
-    train_data = positive_dataset + negative_dataset
-    random.shuffle(train_data)
-    classifier = NaiveBayesClassifier.train(train_data)
-    return classifier
-
-
-def create_trainer_model_B(training_data_path, model_path, training_size=500000):
+def create_trainer_model(training_data_path, model_path, training_size=500000):
     if os.path.exists(model_path):
         loaded_model = pickle.load(open(model_path, 'rb'))
         return loaded_model
@@ -215,7 +190,6 @@ def create_trainer_model_B(training_data_path, model_path, training_size=500000)
     negative_tokens_model = tweet_model_generator(negative_cleaned_tokens_list)
     neutral_tokens_model = tweet_model_generator(neutral_cleaned_tokens_list)
     positive_tokens_model = tweet_model_generator(positive_cleaned_tokens_list)
-
     negative_dataset = []
     neutral_dataset = []
     positive_dataset = []
@@ -228,13 +202,11 @@ def create_trainer_model_B(training_data_path, model_path, training_size=500000)
 
     train_data = negative_dataset + neutral_dataset + positive_dataset
     classifier = NaiveBayesClassifier.train(train_data)
-
     if not os.path.exists(os.getcwd() + os.sep + "data" + os.sep + "classifier"):
         os.mkdir(os.getcwd() + os.sep + "data" + os.sep + "classifier")
     f = open(model_path, 'wb')
     pickle.dump(classifier, f)
     f.close()
-
     return classifier
 
 
@@ -252,14 +224,13 @@ def validate_classifier(classifier):
     for tokens in positive_cleaned_tokens_list:
         result_list.append(classifier.classify(dict([token, True] for token in tokens)))
     print("Positive Tweet Detection Accuracy: " + str(100.0 * result_list.count("Positive") / len(result_list)) + "%")
-
     result_list = []
     for tokens in negative_cleaned_tokens_list:
         result_list.append(classifier.classify(dict([token, True] for token in tokens)))
     print("Negative Tweet Detection Accuracy: " + str(100.0 * result_list.count("Negative") / len(result_list)) + "%")
 
 
-def sentiment_analyzer_mt_wrapper(date, data, nlp, words, classifier):
+def sentiment_analyzer_mt_wrapper(date, data, classifier):
     result_list = []
     for line in data:
         if line[3] != "text":
@@ -270,13 +241,13 @@ def sentiment_analyzer_mt_wrapper(date, data, nlp, words, classifier):
     return result_list
 
 
-def tweet_sentiment_analyzer(data_frame, nlp, words, classifier, file_path, verbose=False):
+def tweet_sentiment_analyzer(data_frame, classifier, file_path, verbose=False):
     file = open(file_path, "a+")
     file.truncate(0)
     file.write("date,Negative,Neutral,Positive\n")
     file.close()
     for date in data_frame:
-        result_list = sentiment_analyzer_mt_wrapper(date, data_frame[date], nlp, words, classifier)
+        result_list = sentiment_analyzer_mt_wrapper(date, data_frame[date], classifier)
         file = open(file_path, "a+")
         file.write(date + "," + str(result_list.count("Negative")) + "," + str(result_list.count("Neutral")) + "," + str(result_list.count("Positive")) + "\n")
         file.flush()
@@ -285,7 +256,7 @@ def tweet_sentiment_analyzer(data_frame, nlp, words, classifier, file_path, verb
             print(date, result_list.count("Negative"), result_list.count("Neutral"), result_list.count("Positive"))
 
 
-def tweet_topic_modeling(data, NUM_TOPICS, nlp, words, output_path):
+def tweet_topic_modeling(data, num_topic, nlp, words, output_path):
     for date in data:
         text_data = []
         for line in data[date]:
@@ -294,16 +265,18 @@ def tweet_topic_modeling(data, NUM_TOPICS, nlp, words, output_path):
                 text_data.append(tokens)
         dictionary = corpora.Dictionary(text_data)
         corpus = [dictionary.doc2bow(text) for text in text_data]
-        ldamodel = gensim.models.ldamodel.LdaModel(corpus, num_topics=NUM_TOPICS, id2word=dictionary, passes=15)
-        topics = ldamodel.print_topics(num_words=5)
-        sys.stdout.write(date + "\n")
-        for topic in topics: sys.stdout.write(str(topic) + "\n")
+        lda_model = gensim.models.ldamodel.LdaModel(corpus, num_topics=num_topic, id2word=dictionary, passes=15)
+        topics = lda_model.print_topics(num_words=5)
+        print(date, topics)
+
 
 
 if __name__ == "__main__":
     # print_header(os.getcwd() + os.sep + "header.txt")
+
     # print("Loading NLTK Data Packages...")
     # load_nltk_packages()
+
     # print("Checking for dataset updates...")
     # dataset_check()
 
@@ -326,15 +299,13 @@ if __name__ == "__main__":
     print("Training/Loading Tweet Classifier Model...")
     training_data_path = os.getcwd() + os.sep + "data" + os.sep + "training_data_t4sa" + os.sep + "training_data_t4sa.csv"
     model_path = os.getcwd() + os.sep + "data" + os.sep + "classifier" + os.sep + "NaiveBayesClassifier_1M.pickle"
-    # classifier = create_trainer_model_B(training_data_path, model_path, 9999999)
+    # classifier = create_trainer_model(training_data_path, model_path, 9999999)
 
     print("Testing Classifier Model on Example Tweets...")
     # validate_classifier(classifier)
 
-    print("Processing Sentiment Analyzer...", end='')
-    # tweet_sentiment_analyzer(tweet_data, nlp, words, classifier, os.getcwd() + os.sep + "data" + os.sep + "tweet_sentiment_result.csv")
-    print("[Complete]")
+    print("Processing Sentiment Analyzer...", end='\n')
+    # tweet_sentiment_analyzer(tweet_data, classifier, os.getcwd() + os.sep + "data" + os.sep + "tweet_sentiment_result.csv")
 
     print("Processing Topic Generation...", end='\n')
-    tweet_topic_modeling(tweet_data, 3, nlp, words, os.getcwd() + os.sep + "data" + os.sep + "dictionary" + os.sep + "tweet_topic_model.csv")
-    print("[Complete]")
+    tweet_topic_modeling(tweet_data, 1, nlp, words, os.getcwd() + os.sep + "data" + os.sep + "dictionary" + os.sep + "tweet_topic_model.csv")
