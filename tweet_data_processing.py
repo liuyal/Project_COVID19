@@ -31,6 +31,7 @@ import pandas as pd
 from tqdm import tqdm
 
 import gensim
+from gensim import corpora
 from gensim.utils import simple_preprocess
 from gensim.parsing.preprocessing import STOPWORDS
 
@@ -57,10 +58,10 @@ def print_header(path):
     f.close()
     print("\nDATE: 2020/08/10")
     print("AUTHOR: Jerry Liu")
-    print("EMAIL: Liuyal@sfu.ca")
+    print("EMAIL: Liuyal@sfu.ca\n")
 
 
-def load_nltk_packets():
+def load_nltk_packages():
     nltk.download("punkt")
     nltk.download("stopwords")
     nltk.download("words")
@@ -69,7 +70,11 @@ def load_nltk_packets():
 
 
 def dataset_check():
-    return 0
+    # TODO: check repo
+    os.system("python " + os.getcwd() + os.sep + "csse_data_collector.py")
+    # TODO: check repo
+    os.system("python " + os.getcwd() + os.sep + "tweet_data_collector.py")
+    os.system("python " + os.getcwd() + os.sep + "tweet_data_filter.py")
 
 
 def delete_folder(path):
@@ -167,7 +172,6 @@ def create_trainer_model_A():
     negative_dataset = [(tweet_dict, "Negative") for tweet_dict in negative_tokens_model]
     train_data = positive_dataset + negative_dataset
     random.shuffle(train_data)
-
     classifier = NaiveBayesClassifier.train(train_data)
     return classifier
 
@@ -234,11 +238,31 @@ def create_trainer_model_B(training_data_path, model_path, training_size=500000)
     return classifier
 
 
+def validate_classifier(classifier):
+    positive_cleaned_tokens_list = []
+    negative_cleaned_tokens_list = []
+    positive_tweet_tokens = twitter_samples.tokenized('positive_tweets.json')
+    negative_tweet_tokens = twitter_samples.tokenized('negative_tweets.json')
+    for tokens in positive_tweet_tokens:
+        positive_cleaned_tokens_list.append(remove_noise(tokens, stopwords.words('english')))
+    for tokens in negative_tweet_tokens:
+        negative_cleaned_tokens_list.append(remove_noise(tokens, stopwords.words('english')))
+
+    result_list = []
+    for tokens in positive_cleaned_tokens_list:
+        result_list.append(classifier.classify(dict([token, True] for token in tokens)))
+    print("Positive Tweet Detection Accuracy: " + str(100.0 * result_list.count("Positive") / len(result_list)) + "%")
+
+    result_list = []
+    for tokens in negative_cleaned_tokens_list:
+        result_list.append(classifier.classify(dict([token, True] for token in tokens)))
+    print("Negative Tweet Detection Accuracy: " + str(100.0 * result_list.count("Negative") / len(result_list)) + "%")
+
+
 def sentiment_analyzer_mt_wrapper(date, data, nlp, words, classifier):
     result_list = []
     for line in data:
         if line[3] != "text":
-            # tokens, token_count = language_process(line[3], nlp, words)
             custom_tweet = line[3]
             custom_tokens = word_tokenize(custom_tweet)
             tokens = remove_noise(custom_tokens, stopwords.words('english'))
@@ -246,48 +270,71 @@ def sentiment_analyzer_mt_wrapper(date, data, nlp, words, classifier):
     return result_list
 
 
-def tweet_sentiment_analyzer(data_frame, nlp, words, classifier, file_path):
+def tweet_sentiment_analyzer(data_frame, nlp, words, classifier, file_path, verbose=False):
     file = open(file_path, "a+")
     file.truncate(0)
     file.write("date,Negative,Neutral,Positive\n")
     file.close()
     for date in data_frame:
         result_list = sentiment_analyzer_mt_wrapper(date, data_frame[date], nlp, words, classifier)
-        print(date, result_list.count("Negative"), result_list.count("Neutral"), result_list.count("Positive"))
         file = open(file_path, "a+")
         file.write(date + "," + str(result_list.count("Negative")) + "," + str(result_list.count("Neutral")) + "," + str(result_list.count("Positive")) + "\n")
         file.flush()
         file.close()
+        if verbose:
+            print(date, result_list.count("Negative"), result_list.count("Neutral"), result_list.count("Positive"))
+
+
+def tweet_topic_modeling(data, NUM_TOPICS, nlp, words, output_path):
+    for date in data:
+        text_data = []
+        for line in data[date]:
+            if line[3] != "text":
+                tokens, token_count = language_process(line[3], nlp, words)
+                text_data.append(tokens)
+        dictionary = corpora.Dictionary(text_data)
+        corpus = [dictionary.doc2bow(text) for text in text_data]
+        ldamodel = gensim.models.ldamodel.LdaModel(corpus, num_topics=NUM_TOPICS, id2word=dictionary, passes=15)
+        topics = ldamodel.print_topics(num_words=5)
+        sys.stdout.write(date + "\n")
+        for topic in topics: sys.stdout.write(str(topic) + "\n")
 
 
 if __name__ == "__main__":
     # print_header(os.getcwd() + os.sep + "header.txt")
-    load_nltk_packets()
-    dataset_check()
+    # print("Loading NLTK Data Packages...")
+    # load_nltk_packages()
+    # print("Checking for dataset updates...")
+    # dataset_check()
+
     location_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_location_data"
     tweet_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_filtered_tweets"
 
     nlp = spacy.load("en")
     words = set(nltk.corpus.words.words())
 
-    print("Loading COVID-19 datasets...", end='')
+    print("Loading COVID-19 related datasets...", end='')
     location_data = load_csv_data(location_directory)
     tweet_data = load_csv_data(tweet_directory)
     print("[Complete]")
 
     print("Creating Data Frames...", end='')
-    location_data_frame = to_data_frame(location_data)
-    tweet_data_frame = to_data_frame(tweet_data)
+    # location_data_frame = to_data_frame(location_data)
+    # tweet_data_frame = to_data_frame(tweet_data)
     print("[Complete]")
 
     print("Training/Loading Tweet Classifier Model...")
     training_data_path = os.getcwd() + os.sep + "data" + os.sep + "training_data_t4sa" + os.sep + "training_data_t4sa.csv"
     model_path = os.getcwd() + os.sep + "data" + os.sep + "classifier" + os.sep + "NaiveBayesClassifier_1M.pickle"
-    classifier = create_trainer_model_B(training_data_path, model_path, 9999999)
+    # classifier = create_trainer_model_B(training_data_path, model_path, 9999999)
 
-    # TODO: Test accuracy on tweet example
+    print("Testing Classifier Model on Example Tweets...")
+    # validate_classifier(classifier)
 
-    print("Processing Sentiment Analyzer...", end='\n')
-    tweet_sentiment_analyzer(tweet_data, nlp, words, classifier, os.getcwd() + os.sep + "data" + os.sep + "tweet_sentiment_result.csv")
+    print("Processing Sentiment Analyzer...", end='')
+    # tweet_sentiment_analyzer(tweet_data, nlp, words, classifier, os.getcwd() + os.sep + "data" + os.sep + "tweet_sentiment_result.csv")
+    print("[Complete]")
 
-    print("EOS")
+    print("Processing Topic Generation...", end='\n')
+    tweet_topic_modeling(tweet_data, 3, nlp, words, os.getcwd() + os.sep + "data" + os.sep + "dictionary" + os.sep + "tweet_topic_model.csv")
+    print("[Complete]")
