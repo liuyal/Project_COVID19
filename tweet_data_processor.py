@@ -110,24 +110,6 @@ def to_data_frame(data):
     return data_frame
 
 
-def language_process(raw_text, nlp, words):
-    # Functions are credited to TA Arjun Mahadevan
-    url_pattern = re.compile(r'https://\S+|www\.\S+')
-    replace_url = url_pattern.sub(r'', str(raw_text))
-    # Remove url and punctuation base on regex pattern
-    punctuation_pattern = re.compile(r'[^\w\s\-]')
-    no_punctuation = punctuation_pattern.sub(r'', replace_url)
-    processed_text = re.sub(r'^[0-9]*$', '', no_punctuation)
-    # Load NLTK's words library and filter out non-english words
-    processed_text = " ".join(w for w in nltk.wordpunct_tokenize(processed_text) if w.lower() in words)
-    doc = nlp(processed_text.lower())
-    # Tokenize text and remove words that are less than 3 letters and stop words
-    output_words = [token.text for token in doc if token.is_stop is not True and token.is_punct is not True]
-    output_tokens = [letters for letters in output_words if len(letters) > 2]
-    word_collection = collections.Counter(output_words)
-    return output_tokens, word_collection
-
-
 def remove_noise(tweet_tokens, stop_words=()):
     cleaned_tokens = []
     for token, tag in pos_tag(tweet_tokens):
@@ -202,8 +184,9 @@ def create_trainer_model(training_data_path, model_path, training_size=500000):
 
     train_data = negative_dataset + neutral_dataset + positive_dataset
     classifier = NaiveBayesClassifier.train(train_data)
-    if not os.path.exists(os.getcwd() + os.sep + "data" + os.sep + "classifier"):
-        os.mkdir(os.getcwd() + os.sep + "data" + os.sep + "classifier")
+
+    if not os.path.exists(os.sep.join(model_path.split(os.sep)[0:-1])):
+        os.mkdir(os.sep.join(model_path.split(os.sep)[0:-1]))
     f = open(model_path, 'wb')
     pickle.dump(classifier, f)
     f.close()
@@ -241,13 +224,13 @@ def sentiment_analyzer_mt_wrapper(date, data, classifier):
     return result_list
 
 
-def tweet_sentiment_analyzer(data_frame, classifier, file_path, verbose=False):
+def tweet_sentiment_analyzer(data, classifier, file_path, verbose=False):
     file = open(file_path, "a+")
     file.truncate(0)
     file.write("date,Negative,Neutral,Positive\n")
     file.close()
-    for date in data_frame:
-        result_list = sentiment_analyzer_mt_wrapper(date, data_frame[date], classifier)
+    for date in data:
+        result_list = sentiment_analyzer_mt_wrapper(date, data[date], classifier)
         file = open(file_path, "a+")
         file.write(date + "," + str(result_list.count("Negative")) + "," + str(result_list.count("Neutral")) + "," + str(result_list.count("Positive")) + "\n")
         file.flush()
@@ -256,19 +239,50 @@ def tweet_sentiment_analyzer(data_frame, classifier, file_path, verbose=False):
             print(date, result_list.count("Negative"), result_list.count("Neutral"), result_list.count("Positive"))
 
 
-def tweet_topic_modeling(data, num_topic, nlp, words, output_path):
-    for date in data:
-        text_data = []
-        for line in data[date]:
-            if line[3] != "text":
-                tokens, token_count = language_process(line[3], nlp, words)
-                text_data.append(tokens)
-        dictionary = corpora.Dictionary(text_data)
-        corpus = [dictionary.doc2bow(text) for text in text_data]
-        lda_model = gensim.models.ldamodel.LdaModel(corpus, num_topics=num_topic, id2word=dictionary, passes=15)
-        topics = lda_model.print_topics(num_words=5)
-        print(date, topics)
+def tweet_topic_modeling(num_topic, input_path, output_path):
+    files = os.listdir(input_path)
+    if not os.path.exists(output_path):
+        file = open(output_path, "w+")
+        file.truncate(0)
+        file.write("date,index,topic_model\n")
+        file.flush()
+        file.close()
+    else:
+        file = open(output_path, "r+")
+        text = file.readlines()
+        text.pop(0)
+        file.close()
 
+        dates = []
+        for line in text: dates.append(line.split(',')[0])
+        file_dates = []
+        for item in files: file_dates.append(item.split('_')[0])
+
+        new_date_files = []
+        for item in files:
+            for date in set(file_dates).difference(set(dates)):
+                if date in item and "count" not in item:
+                    new_date_files.append(item)
+        files = new_date_files
+
+    for file_name in files:
+        if "count" not in file_name.lower():
+            file = open(input_path + os.sep + file_name, "r+")
+            text = file.readlines()
+            file.close()
+            text_data = []
+            for line in text: text_data.append(line.replace('\n', '').split(',')[1:])
+            date = file_name.split('_')[0]
+            dictionary = corpora.Dictionary(text_data)
+            corpus = [dictionary.doc2bow(text) for text in text_data]
+            lda_model = gensim.models.ldamodel.LdaModel(corpus, num_topics=num_topic, id2word=dictionary, passes=15)
+            topics = lda_model.print_topics(num_words=5)
+            file = open(output_path, "a+")
+            for index, topic in topics:
+                file.write(date + "," + str(index) + "," + str(topic) + "\n")
+                print(date + " " + str(index) + " " + str(topic))
+            file.flush()
+            file.close()
 
 
 if __name__ == "__main__":
@@ -282,6 +296,7 @@ if __name__ == "__main__":
 
     location_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_location_data"
     tweet_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_filtered_tweets"
+    tweet_tokenized_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_tokenized_tweets"
 
     nlp = spacy.load("en")
     words = set(nltk.corpus.words.words())
@@ -308,4 +323,4 @@ if __name__ == "__main__":
     # tweet_sentiment_analyzer(tweet_data, classifier, os.getcwd() + os.sep + "data" + os.sep + "tweet_sentiment_result.csv")
 
     print("Processing Topic Generation...", end='\n')
-    tweet_topic_modeling(tweet_data, 1, nlp, words, os.getcwd() + os.sep + "data" + os.sep + "dictionary" + os.sep + "tweet_topic_model.csv")
+    tweet_topic_modeling(5, tweet_tokenized_directory, os.getcwd() + os.sep + "data" + os.sep + "tweet_topic_modeling_result.csv")
