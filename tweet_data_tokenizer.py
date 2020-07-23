@@ -49,7 +49,6 @@ def language_process(raw_text, nlp, words):
 
 
 def tweet_tokenize(data, nlp, words, output_path):
-
     if not os.path.exists(output_path):
         os.mkdir(output_path)
     else:
@@ -98,7 +97,6 @@ def tweet_tokenize(data, nlp, words, output_path):
         file.flush()
         file.close()
         print(date, "Completed!")
-    # total = sum(token_count_total, collections.Counter())
 
 
 if __name__ == "__main__":
@@ -107,5 +105,6 @@ if __name__ == "__main__":
     nlp = spacy.load("en")
     words = set(nltk.corpus.words.words())
 
-    print("Tokenizing Filtered Tweets...")
+    print("Tokenizing Filtered Tweets...", end='')
     tweet_tokenize(tweet_data, nlp, words, os.getcwd() + os.sep + "data" + os.sep + "covid_19_tokenized_tweets")
+    print("[Complete!]")
