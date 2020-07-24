@@ -9,6 +9,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import matplotlib.animation as animation
+import matplotlib.dates as mdates
+import matplotlib.cbook as cbook
 from IPython.display import HTML
 
 
@@ -89,17 +91,17 @@ def format_data(cases_count_daily, token_count_daily, output_path):
     file.close()
 
 
-def plot_bar_race(data, output_path):
+def plot_bar_race(cases_data, output_path):
     if not os.path.exists(output_path):
         os.mkdir(output_path)
     else:
         delete_folder(output_path)
         os.mkdir(output_path)
 
-    for date in data:
-        print(date, data[date].most_common(10))
-        words = list(data[date])[0:10]
-        count = [data[date][word] for word in words]
+    for date in cases_data:
+        print(date, cases_data[date].most_common(10))
+        words = list(cases_data[date])[0:10]
+        count = [cases_data[date][word] for word in words]
         y_pos = np.arange(len(words))
 
         plt.rcParams.update({'font.size': 16})
@@ -117,6 +119,35 @@ def plot_bar_race(data, output_path):
         plt.savefig(output_path + os.sep + date + '.png')
         plt.close()
 
+
+def plot_location(location_data, output_path):
+    if not os.path.exists(output_path):
+        os.mkdir(output_path)
+    else:
+        delete_folder(output_path)
+        os.mkdir(output_path)
+
+    cases = []
+    date_labels = list(location_data.keys())
+    x = np.arange(0, len(location_data), 1)
+
+    for date in location_data:
+        print(date, location_data[date]["confirmed"])
+        cases.append(float(location_data[date]["confirmed"]))
+
+        plt.rcParams.update({'font.size': 16})
+
+        fig, ax = plt.subplots()
+        fig.set_figheight(8)
+        fig.set_figwidth(16)
+        ax.set_xlim((0, 180))
+
+        plt.ylim(0, 4000000)
+        plt.plot(x[0:len(cases)], cases)
+        plt.savefig(output_path + os.sep + date + '.png')
+        plt.close()
+
+
 def make_gif(image_folder_path, output_path):
     images = []
     for image_name in os.listdir(image_folder_path):
@@ -128,14 +159,20 @@ if __name__ == "__main__":
     location_data_results_path = os.getcwd() + os.sep + "data" + os.sep + "daily_us_confirmed_cases.csv"
     tweet_tokenized_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_tokenized_tweets"
     combined_data_path = os.getcwd() + os.sep + "data" + os.sep + "bar_chart_race.csv"
-    image_folder = os.getcwd() + os.sep + "data" + os.sep + "barcharts"
-    bar_chart_gif_path = os.getcwd() + os.sep + "data" + os.sep + "barcharts.gif"
+
+    bar_chart_image_folder = os.getcwd() + os.sep + "data" + os.sep + "bar_charts"
+    bar_chart_gif_path = os.getcwd() + os.sep + "data" + os.sep + "bar_charts.gif"
+    line_chart_image_folder = os.getcwd() + os.sep + "data" + os.sep + "line_charts"
+    line_chart_gif_path = os.getcwd() + os.sep + "data" + os.sep + "line_charts.gif"
 
     cases_count_daily = load_cases_count(location_data_results_path)
     token_count_daily = load_tweet_token_count(tweet_tokenized_directory)
     # format_data(cases_count_daily, token_count_daily, combined_data_path)
 
-    # plot_bar_race(token_count_daily, image_folder)
-    make_gif(image_folder, bar_chart_gif_path)
+    plot_bar_race(token_count_daily, bar_chart_image_folder)
+    make_gif(bar_chart_image_folder, bar_chart_gif_path)
+
+    plot_location(cases_count_daily, line_chart_image_folder)
+    make_gif(line_chart_image_folder, line_chart_gif_path)
 
     print("EOS")
