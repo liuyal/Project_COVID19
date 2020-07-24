@@ -105,6 +105,5 @@ if __name__ == "__main__":
     nlp = spacy.load("en")
     words = set(nltk.corpus.words.words())
 
-    print("Tokenizing Filtered Tweets...", end='')
+    print("Tokenizing Filtered Tweets...")
     tweet_tokenize(tweet_data, nlp, words, os.getcwd() + os.sep + "data" + os.sep + "covid_19_tokenized_tweets")
-    print("[Complete!]")

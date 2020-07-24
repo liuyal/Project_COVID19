@@ -134,6 +134,7 @@ if __name__ == "__main__":
     nCoV2019_CSSE_repo = r"https://github.com/CSSEGISandData/COVID-19.git"
     nCoV2019_CSSE_data_url = r"https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_daily_reports"
     nCoV2019_CSSE_data_path = os.getcwd() + os.sep + "data" + os.sep + nCoV2019_CSSE_repo.split('/')[-1].split('.')[0].lower().replace('-', '_') + "_location_data"
+    location_data_results_path = os.getcwd() + os.sep + "data" + os.sep + "daily_us_confirmed_cases.csv"
 
     print("Checking COVID-19 GIT REPO data...")
     check_repo_data(nCoV2019_CSSE_data_path, nCoV2019_CSSE_data_url, "2020-01-01")
@@ -145,7 +146,7 @@ if __name__ == "__main__":
     location_data_frame = to_data_frame(location_data)
 
     print("Processing COVID-19 Locations Data Frames...")
-    process_location_data(location_data_frame, os.getcwd() + os.sep + "data" + os.sep + "daily_us_confirmed_cases.csv")
+    process_location_data(location_data_frame, location_data_results_path)
 
     print("Generating COVID-19 Locations Sqlite DB...")
     df2db("data" + os.sep + "covid19_csse_database.db", "locations", location_data_frame)

@@ -40,22 +40,18 @@ import matplotlib.colors as mcolors
 
 import spacy
 import nltk
-from nltk.stem.porter import *
 from nltk.corpus import twitter_samples
 from nltk.corpus import stopwords
 from nltk.tag import pos_tag
 from nltk.tokenize import word_tokenize
 from nltk import NaiveBayesClassifier
 from nltk.stem import WordNetLemmatizer
-from nltk.stem import SnowballStemmer
-from nltk import FreqDist
-from nltk import classify
 
 
 def print_header(path):
-    f = open(path, "r", encoding="utf8")
-    print(f.read())
-    f.close()
+    file = open(path, "r", encoding="utf8")
+    print(file.read())
+    file.close()
     print("\nDATE: 2020/08/10")
     print("AUTHOR: Jerry Liu")
     print("EMAIL: Liuyal@sfu.ca\n")
@@ -193,9 +189,9 @@ def create_classifier_model(training_data_path, model_path, training_size=500000
 
     if not os.path.exists(os.sep.join(model_path.split(os.sep)[0:-1])):
         os.mkdir(os.sep.join(model_path.split(os.sep)[0:-1]))
-    f = open(model_path, 'wb')
-    pickle.dump(classifier, f)
-    f.close()
+    file = open(model_path, 'wb')
+    pickle.dump(classifier, file)
+    file.close()
     return classifier
 
 
@@ -240,26 +236,58 @@ def tweet_sentiment_analyzer(data, classifier, file_path, verbose=False):
             print(date, result_list.count("Negative"), result_list.count("Neutral"), result_list.count("Positive"))
 
 
+def tweet_wordcount_frequency_distribution(input_path, output_path):
+    wordcount_daily = {}
+    wordcount_list = []
+    for file_name in os.listdir(input_path):
+        if "count" in file_name:
+            date = file_name.split('_')[0]
+            file = open(input_path + os.sep + file_name)
+            lines = file.readlines()
+            lines.pop(0)
+            file.close()
+            wordcount_daily[date] = []
+            item_list = {}
+            for item in lines:
+                word = item.replace('\n', '').split(',')[0]
+                count = item.replace('\n', '').split(',')[1]
+                item_list[word] = int(count)
+            wordcount_daily[date].append(collections.Counter(item_list))
+            wordcount_list.append(collections.Counter(item_list))
+    wordcount_total = sum(wordcount_list, collections.Counter())
+
+    file = open(output_path, "a+")
+    file.truncate(0)
+    file.write("word,count\n")
+    for word, count in wordcount_total.most_common():
+        file.write(word + "," + str(count) + '\n')
+        file.flush()
+    file.close()
+
+    return wordcount_daily, wordcount_total
+
+
 def load_tweet_tokens(input_path):
-    token_list = {}
+    token_list_daily = {}
+    token_list_total = []
     for file_name in os.listdir(input_path):
         if "count" not in file_name.lower():
             date = file_name.split('_')[0]
-            token_list[date] = []
-            f = open(input_path + os.sep + file_name)
-            raw_text_lines = f.readlines()
-            f.close()
+            token_list_daily[date] = []
+            file = open(input_path + os.sep + file_name)
+            raw_text_lines = file.readlines()
+            file.close()
             for line in raw_text_lines:
-                token_list[date].append(line.replace('\n', '').split(',')[1:])
-    return token_list
+                token_list_daily[date].append(line.replace('\n', '').split(',')[1:])
+                token_list_total.append(line.replace('\n', '').split(',')[1:])
+    return token_list_daily, token_list_total
 
 
-def tweet_topic_modeling(num_topic, token_list, output_path):
+def tweet_daily_topic_modeling(num_topic, token_list, output_path, verbose=False):
     if not os.path.exists(output_path):
         file = open(output_path, "w+")
         file.truncate(0)
         file.write("date,index,topic_model\n")
-        file.flush()
         file.close()
     else:
         file = open(output_path, "r+")
@@ -285,18 +313,37 @@ def tweet_topic_modeling(num_topic, token_list, output_path):
         file = open(output_path, "a+")
         for index, topic in topics:
             file.write(date + "," + str(index) + "," + str(topic) + "\n")
-            print(date + " " + str(index) + " " + str(topic))
+            if verbose: print(date + " " + str(index) + " " + str(topic))
         file.flush()
         file.close()
 
 
-def tweet_dominant_topic(num_topic, token_list, output_path):
-    for date in token_list:
+def tweet_daily_dominant_topic(num_topic, token_list, output_path, verbose=False):
+    if not os.path.exists(output_path):
+        file = open(output_path, "a+")
+        file.truncate(0)
+        file.write("date," + ','.join(['dominant_topic', 'percent_contribution', 'topic_keywords']) + '\n')
+        file.close()
+    else:
+        file = open(output_path, "r+")
+        output_dates = file.readlines()
+        file.close()
 
+        output_date_list = []
+        for line in output_dates[1:]:
+            output_date_list.append(line.split(',')[0])
+        input_date_list = []
+        for date in list(token_list.keys()):
+            input_date_list.append(date)
+
+        for date in list(token_list.keys()):
+            if date not in set(input_date_list).difference(set(output_date_list)):
+                del token_list[date]
+
+    for date in token_list:
         dictionary = corpora.Dictionary(token_list[date])
         corpus = [dictionary.doc2bow(text) for text in token_list[date]]
         lda_model = gensim.models.ldamodel.LdaModel(corpus, num_topics=num_topic, id2word=dictionary, passes=15)
-
         sent_topics_df = pd.DataFrame()
         for i, row_list in enumerate(lda_model[corpus]):
             row = row_list[0] if lda_model.per_word_topics else row_list
@@ -308,20 +355,14 @@ def tweet_dominant_topic(num_topic, token_list, output_path):
                     sent_topics_df = sent_topics_df.append(pd.Series([int(topic_num), round(prop_topic, 4), topic_keywords]), ignore_index=True)
                 else:
                     break
-        sent_topics_df.columns = ['Dominant_Topic', 'Perc_Contribution', 'Topic_Keywords']
-
-        print()
-
-
-def tweet_wordcount_frequency_distribution(input_path, output_path):
-    text_list = []
-    for file in os.listdir(input_path):
-        if "count" in file:
-            f = open(input_path + os.sep + file)
-            text = f.readlines()
-            text.pop(0)
-            f.close()
-            text_list = text_list + text
+        sent_topics_df.columns = ['dominant_topic', 'percent_contribution', 'topic_keywords']
+        file = open(output_path, "a+")
+        data = sent_topics_df.values.tolist()[0][1:]
+        data[-1] = data[-1].replace(',', ';')
+        file.write(date + ',' + ','.join([str(x) for x in data]) + '\n')
+        file.flush()
+        file.close()
+        if verbose: print(date, data)
 
 
 if __name__ == "__main__":
@@ -330,7 +371,7 @@ if __name__ == "__main__":
     # load_nltk_packages()
     # print("Checking for dataset updates...")
     # dataset_check()
-
+    #
     # nlp = spacy.load("en")
     # words = set(nltk.corpus.words.words())
 
@@ -338,11 +379,15 @@ if __name__ == "__main__":
     tweet_filtered_data_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_filtered_tweets"
     tweet_sentiment_result_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_sentiment_result.csv"
     tweet_tokenized_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_tokenized_tweets"
+
+    tweet_topic_modeling_result_daily_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_topic_modeling_result_daily.csv"
+    tweet_dominant_topic_result_daily_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_dominant_topic_result_daily.csv"
     tweet_topic_modeling_result_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_topic_modeling_result.csv"
     tweet_dominant_topic_result_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_dominant_topic_result.csv"
+
     tweet_token_distribution_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_token_distribution.csv"
-    training_data_path = os.getcwd() + os.sep + "data" + os.sep + "training_data_t4sa" + os.sep + "training_data_t4sa.csv"
-    classifier_model_path = os.getcwd() + os.sep + "data" + os.sep + "classifier" + os.sep + "NaiveBayesClassifier_1M.pickle"
+    tweet_training_data_path = os.getcwd() + os.sep + "data" + os.sep + "training_data_t4sa" + os.sep + "training_data_t4sa.csv"
+    tweet_classifier_model_path = os.getcwd() + os.sep + "data" + os.sep + "classifier" + os.sep + "NaiveBayesClassifier_1M.pickle"
 
     # print("Loading COVID-19 related datasets...")
     # location_data = load_csv_data(location_data_directory)
@@ -353,16 +398,16 @@ if __name__ == "__main__":
     # tweet_data_frame = to_data_frame(tweet_data)
     #
     # print("Training/Loading Tweet Classifier Model...")
-    # classifier = create_classifier_model(training_data_path, classifier_model_path, 9999999)
+    # classifier = create_classifier_model(tweet_training_data_path, tweet_classifier_model_path, 9999999)
     #
     # print("Testing Classifier Model on Example Tweets...")
     # validate_classifier(classifier)
     #
     # print("Processing Sentiment Analyzer...")
     # tweet_sentiment_analyzer(tweet_data, classifier, tweet_sentiment_result_directory, verbose=False)
-
-    print("Processing Topic Modeling...")
-    tweet_token_list = load_tweet_tokens(tweet_tokenized_directory)
-    # tweet_topic_modeling(5, tweet_token_list, tweet_topic_modeling_result_directory)
-    tweet_dominant_topic(5, tweet_token_list, tweet_dominant_topic_result_directory)
-    # tweet_wordcount_frequency_distribution(tweet_tokenized_directory, tweet_token_distribution_directory)
+    #
+    # print("Processing Topic Modeling...")
+    # wordcount_daily, wordcount_total = tweet_wordcount_frequency_distribution(tweet_tokenized_directory, tweet_token_distribution_directory)
+    # tweet_tokens_daily, tweet_tokens_total = load_tweet_tokens(tweet_tokenized_directory)
+    # tweet_topic_modeling_daily(5, tweet_tokens_daily, tweet_topic_modeling_result_daily_directory)
+    # tweet_dominant_topic_daily(5, tweet_tokens_daily, tweet_dominant_topic_result_daily_directory)
