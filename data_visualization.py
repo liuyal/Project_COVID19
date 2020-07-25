@@ -91,7 +91,9 @@ def format_data(cases_count_daily, token_count_daily, output_path):
     file.close()
 
 
-def plot_bar_race(cases_data, output_path):
+def plot_cases(cases_data, output_path):
+    if not os.path.exists(os.sep.join(output_path.split(os.sep)[0:-1])):
+        os.mkdir(os.sep.join(output_path.split(os.sep)[0:-1]))
     if not os.path.exists(output_path):
         os.mkdir(output_path)
     else:
@@ -121,6 +123,8 @@ def plot_bar_race(cases_data, output_path):
 
 
 def plot_location(location_data, output_path):
+    if not os.path.exists(os.sep.join(output_path.split(os.sep)[0:-1])):
+        os.mkdir(os.sep.join(output_path.split(os.sep)[0:-1]))
     if not os.path.exists(output_path):
         os.mkdir(output_path)
     else:
@@ -128,7 +132,6 @@ def plot_location(location_data, output_path):
         os.mkdir(output_path)
 
     cases = []
-    date_labels = list(location_data.keys())
     x = np.arange(0, len(location_data), 1)
 
     for date in location_data:
@@ -148,6 +151,52 @@ def plot_location(location_data, output_path):
         plt.close()
 
 
+def plot_combined(location_data, cases_data, output_path):
+    if not os.path.exists(os.sep.join(output_path.split(os.sep)[0:-1])):
+        os.mkdir(os.sep.join(output_path.split(os.sep)[0:-1]))
+    if not os.path.exists(output_path):
+        os.mkdir(output_path)
+    else:
+        delete_folder(output_path)
+        os.mkdir(output_path)
+
+    common_dates = list(set(cases_data.keys()).intersection(set(location_data.keys())))
+    common_dates.sort()
+
+    cases = []
+    x = np.arange(0, len(location_data), 1)
+
+    for date in common_dates:
+
+        cases.append(float(location_data[date]["confirmed"]))
+        words = list(cases_data[date])[0:6]
+        count = [cases_data[date][word] for word in words]
+        y_pos = np.arange(len(words))
+
+        plt.rcParams.update({'font.size': 16})
+        fig, ax = plt.subplots(2)
+        fig.set_figheight(9)
+        fig.set_figwidth(16)
+        fig.suptitle(date, fontsize=22, y=0.95)
+
+        ax[0].set_xticks([])
+        ax[0].set_xlim((0, 180))
+        ax[0].set_ylim((0, 4000000))
+        ax[0].set_ylabel("Number of Confirmed Cases", labelpad=20)
+        ax[0].plot(x[0:len(cases)], cases, color='#9E1A1A', linewidth=5)
+        ax[0].plot(x[len(cases)-1], cases[-1], color='#9E1A1A' , marker='o', markerfacecolor='#9E1A1A', markersize=8)
+
+        ax[1].set_xlim((0, 600))
+        ax[1].set_yticks(y_pos)
+        ax[1].set_yticklabels(words)
+        ax[1].invert_yaxis()
+        ax[1].barh(y_pos, count, align='center')
+
+        print(date,common_dates[len(cases)-1], cases[-1])
+        plt.savefig(output_path + os.sep + date + '.png')
+        plt.close()
+
+
 def make_gif(image_folder_path, output_path):
     images = []
     for image_name in os.listdir(image_folder_path):
@@ -160,19 +209,25 @@ if __name__ == "__main__":
     tweet_tokenized_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_tokenized_tweets"
     combined_data_path = os.getcwd() + os.sep + "data" + os.sep + "bar_chart_race.csv"
 
-    bar_chart_image_folder = os.getcwd() + os.sep + "data" + os.sep + "bar_charts"
-    bar_chart_gif_path = os.getcwd() + os.sep + "data" + os.sep + "bar_charts.gif"
-    line_chart_image_folder = os.getcwd() + os.sep + "data" + os.sep + "line_charts"
-    line_chart_gif_path = os.getcwd() + os.sep + "data" + os.sep + "line_charts.gif"
+    bar_chart_image_folder = os.getcwd() + os.sep + "data" + os.sep + "plots" + os.sep + "bar_charts"
+    bar_chart_gif_path = os.getcwd() + os.sep + "data" + os.sep + "plots" + os.sep + "bar_charts.gif"
+    line_chart_image_folder = os.getcwd() + os.sep + "data" + os.sep + "plots" + os.sep + "line_charts"
+    line_chart_gif_path = os.getcwd() + os.sep + "data" + os.sep + "plots" + os.sep + "line_charts.gif"
+
+    combined_chart_image_folder = os.getcwd() + os.sep + "data" + os.sep + "plots" + os.sep + "combined_charts"
+    combined_chart_gif_path = os.getcwd() + os.sep + "data" + os.sep + "plots" + os.sep + "combined_charts.gif"
 
     cases_count_daily = load_cases_count(location_data_results_path)
     token_count_daily = load_tweet_token_count(tweet_tokenized_directory)
     # format_data(cases_count_daily, token_count_daily, combined_data_path)
 
-    plot_bar_race(token_count_daily, bar_chart_image_folder)
+    plot_cases(token_count_daily, bar_chart_image_folder)
     make_gif(bar_chart_image_folder, bar_chart_gif_path)
 
     plot_location(cases_count_daily, line_chart_image_folder)
     make_gif(line_chart_image_folder, line_chart_gif_path)
+
+    plot_combined(cases_count_daily, token_count_daily, combined_chart_image_folder)
+    make_gif(combined_chart_image_folder, combined_chart_gif_path)
 
     print("EOS")
