@@ -1,6 +1,5 @@
-# Project COVID-19
+# A Data Mining Study on COVID-19 Pandemic Growth in Relation to Twitter Trending Topics & Sentiment Analysis
 
-## COVID-19 Data Mining Project
 
 ## Introduction
 Coronavirus disease 2019 or COVID-19 is an infectious disease caused by severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2) [1]. First identified back in December 2019 in Wuhan province, China, the COVID-19 virus has resulted in nearly 15 million confirmed cases globally (as the writing of this report) [2]. Amidst the COVID-19 crisis, social media usage on platforms such as Facebook, WhatsApp, Twitter, and etc. has surged significantly [3]. As the general population rely heavily on social media platforms to gather the latest information in regards to the pandemic, resulting in an unprecedented amount of content and information. 
