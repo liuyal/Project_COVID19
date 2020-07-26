@@ -391,20 +391,20 @@ if __name__ == "__main__":
 
     # print("Loading COVID-19 related datasets...")
     # location_data = load_csv_data(location_data_directory)
-    # tweet_data = load_csv_data(tweet_filtered_data_directory)
+    tweet_data = load_csv_data(tweet_filtered_data_directory)
     #
     # print("Creating Data Frames...")
     # location_data_frame = to_data_frame(location_data)
     # tweet_data_frame = to_data_frame(tweet_data)
     #
-    # print("Training/Loading Tweet Classifier Model...")
-    # classifier = create_classifier_model(tweet_training_data_path, tweet_classifier_model_path, 9999999)
-    #
-    # print("Testing Classifier Model on Example Tweets...")
-    # validate_classifier(classifier)
-    #
-    # print("Processing Sentiment Analyzer...")
-    # tweet_sentiment_analyzer(tweet_data, classifier, tweet_sentiment_result_directory, verbose=False)
+    print("Training/Loading Tweet Classifier Model...")
+    classifier = create_classifier_model(tweet_training_data_path, tweet_classifier_model_path, 9999999)
+
+    print("Testing Classifier Model on Example Tweets...")
+    validate_classifier(classifier)
+
+    print("Processing Sentiment Analyzer...")
+    tweet_sentiment_analyzer(tweet_data, classifier, tweet_sentiment_result_directory, verbose=False)
     #
     # print("Processing Topic Modeling...")
     # wordcount_daily, wordcount_total = tweet_wordcount_frequency_distribution(tweet_tokenized_directory, tweet_token_distribution_directory)
