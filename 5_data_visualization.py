@@ -221,6 +221,7 @@ if __name__ == "__main__":
     token_count_daily = load_tweet_token_count(tweet_tokenized_directory)
     # format_data(cases_count_daily, token_count_daily, combined_data_path)
 
+    print("Running Data Visualizer...")
     plot_cases(token_count_daily, bar_chart_image_folder)
     make_gif(bar_chart_image_folder, bar_chart_gif_path)
 
@@ -230,4 +231,4 @@ if __name__ == "__main__":
     plot_combined(cases_count_daily, token_count_daily, combined_chart_image_folder)
     make_gif(combined_chart_image_folder, combined_chart_gif_path)
 
-    print("EOS")
+    print("Visualization Complete!")

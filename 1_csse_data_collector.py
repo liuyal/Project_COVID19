@@ -150,3 +150,5 @@ if __name__ == "__main__":
 
     print("Generating COVID-19 Locations Sqlite DB...")
     df2db("data" + os.sep + "covid19_csse_database.db", "locations", location_data_frame)
+
+    print("CSSE Data Collection Complete!")

@@ -29,14 +29,6 @@ from tqdm import tqdm
 
 import gensim
 from gensim import corpora
-from gensim.utils import simple_preprocess
-from gensim.parsing.preprocessing import STOPWORDS
-from sklearn.manifold import TSNE
-from bokeh.plotting import figure, output_file, show
-from bokeh.models import Label
-from bokeh.io import output_notebook
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 
 import spacy
 import nltk
@@ -66,11 +58,10 @@ def load_nltk_packages():
 
 
 def dataset_check():
-    # TODO: check repo
-    os.system("python " + os.getcwd() + os.sep + "csse_data_collector.py")
-    # TODO: check repo
-    os.system("python " + os.getcwd() + os.sep + "tweet_data_collector.py")
-    os.system("python " + os.getcwd() + os.sep + "tweet_data_filter.py")
+    os.system("python " + os.getcwd() + os.sep + "1_csse_data_collector.py")
+    os.system("python " + os.getcwd() + os.sep + "2_tweet_data_collector.py")
+    os.system("python " + os.getcwd() + os.sep + "3_tweet_data_filter.py")
+    os.system("python " + os.getcwd() + os.sep + "4_tweet_data_tokenizer.py")
 
 
 def delete_folder(path):
@@ -366,14 +357,16 @@ def tweet_daily_dominant_topic(num_topic, token_list, output_path, verbose=False
 
 
 if __name__ == "__main__":
-    # print_header(os.getcwd() + os.sep + "header.txt")
-    # print("Loading NLTK Data Packages...")
-    # load_nltk_packages()
-    # print("Checking for dataset updates...")
-    # dataset_check()
-    #
-    # nlp = spacy.load("en")
-    # words = set(nltk.corpus.words.words())
+    print_header(os.getcwd() + os.sep + "header.txt")
+
+    print("Loading NLTK Data Packages...")
+    load_nltk_packages()
+
+    print("Checking for dataset updates...")
+    dataset_check()
+
+    nlp = spacy.load("en")
+    words = set(nltk.corpus.words.words())
 
     location_data_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_location_data"
     tweet_filtered_data_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_filtered_tweets"
@@ -382,21 +375,19 @@ if __name__ == "__main__":
 
     tweet_topic_modeling_result_daily_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_topic_modeling_result_daily.csv"
     tweet_dominant_topic_result_daily_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_dominant_topic_result_daily.csv"
-    tweet_topic_modeling_result_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_topic_modeling_result.csv"
-    tweet_dominant_topic_result_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_dominant_topic_result.csv"
 
     tweet_token_distribution_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_token_distribution.csv"
     tweet_training_data_path = os.getcwd() + os.sep + "data" + os.sep + "training_data_t4sa" + os.sep + "training_data_t4sa.csv"
     tweet_classifier_model_path = os.getcwd() + os.sep + "data" + os.sep + "classifier" + os.sep + "NaiveBayesClassifier_1M.pickle"
 
-    # print("Loading COVID-19 related datasets...")
-    # location_data = load_csv_data(location_data_directory)
+    print("Loading COVID-19 related datasets...")
+    location_data = load_csv_data(location_data_directory)
     tweet_data = load_csv_data(tweet_filtered_data_directory)
-    #
-    # print("Creating Data Frames...")
-    # location_data_frame = to_data_frame(location_data)
-    # tweet_data_frame = to_data_frame(tweet_data)
-    #
+
+    print("Creating Data Frames...")
+    location_data_frame = to_data_frame(location_data)
+    tweet_data_frame = to_data_frame(tweet_data)
+
     print("Training/Loading Tweet Classifier Model...")
     classifier = create_classifier_model(tweet_training_data_path, tweet_classifier_model_path, 9999999)
 
@@ -405,9 +396,11 @@ if __name__ == "__main__":
 
     print("Processing Sentiment Analyzer...")
     tweet_sentiment_analyzer(tweet_data, classifier, tweet_sentiment_result_directory, verbose=False)
-    #
-    # print("Processing Topic Modeling...")
-    # wordcount_daily, wordcount_total = tweet_wordcount_frequency_distribution(tweet_tokenized_directory, tweet_token_distribution_directory)
-    # tweet_tokens_daily, tweet_tokens_total = load_tweet_tokens(tweet_tokenized_directory)
-    # tweet_topic_modeling_daily(5, tweet_tokens_daily, tweet_topic_modeling_result_daily_directory)
-    # tweet_dominant_topic_daily(5, tweet_tokens_daily, tweet_dominant_topic_result_daily_directory)
+
+    print("Processing Topic Modeling...")
+    wordcount_daily, wordcount_total = tweet_wordcount_frequency_distribution(tweet_tokenized_directory, tweet_token_distribution_directory)
+    tweet_tokens_daily, tweet_tokens_total = load_tweet_tokens(tweet_tokenized_directory)
+    tweet_daily_topic_modeling(5, tweet_tokens_daily, tweet_topic_modeling_result_daily_directory)
+    tweet_daily_dominant_topic(5, tweet_tokens_daily, tweet_dominant_topic_result_daily_directory)
+
+    os.system("python " + os.getcwd() + os.sep + "5_data_visualization.py")

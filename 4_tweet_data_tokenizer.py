@@ -107,3 +107,4 @@ if __name__ == "__main__":
 
     print("Tokenizing Filtered Tweets...")
     tweet_tokenize(tweet_data, nlp, words, os.getcwd() + os.sep + "data" + os.sep + "covid_19_tokenized_tweets")
+    print("Tokenizer Complete!")

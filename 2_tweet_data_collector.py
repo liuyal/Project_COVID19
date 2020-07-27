@@ -177,3 +177,5 @@ if __name__ == "__main__":
 
     print("Hydrating COVID-19 Tweet text from ID...")
     hydrate(id_list, hydrate_directory, api, "2020-01-01", 1000)
+
+    print("Collector Complete!")

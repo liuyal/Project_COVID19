@@ -74,6 +74,8 @@ if __name__ == "__main__":
     hydrate_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_hydrated_tweets"
     filtered_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_filtered_tweets"
 
+    print("Running Tweet Filter...")
     tweet_data = load_csv_data(hydrate_directory)
     tweet_data_updated = check_updated(hydrate_directory, filtered_directory, tweet_data)
     tweet_language_filter(filtered_directory, tweet_data_updated)
+    print("Filter Complete!")
