@@ -233,6 +233,12 @@ def tweet_wordcount_frequency_distribution(input_path, output_path):
     return wordcount_daily, wordcount_total
 
 
+# TODO: Plot sentiment count
+def plot_tweet_sentiment(input_path, output_path):
+    if not os.path.exists(os.sep.join(output_path.split(os.sep)[0:-1])):
+        os.mkdir(os.sep.join(output_path.split(os.sep)[0:-1]))
+
+
 def red_color_func(word=None, font_size=None, position=None, orientation=None, font_path=None, random_state=None):
     # Function for creating color gradient base on word font size (frequency)
     lmin = 20.0
@@ -246,7 +252,6 @@ def red_color_func(word=None, font_size=None, position=None, orientation=None, f
 def tweet_word_cloud_maker(word_count, color_func, output_path):
     if not os.path.exists(os.sep.join(output_path.split(os.sep)[0:-1])):
         os.mkdir(os.sep.join(output_path.split(os.sep)[0:-1]))
-
     word_cloud = wordcloud.WordCloud(width=1600, height=900)
     word_cloud.max_font_size = 500
     word_cloud.min_font_size = 15
@@ -259,6 +264,12 @@ def tweet_word_cloud_maker(word_count, color_func, output_path):
     plt.savefig(output_path, bbox_inches='tight', transparent=True)
     image = Image.open(output_path)
     # image.show()
+
+
+# TODO: Plot word count distribution
+def tweet_word_cloud_distribution_plotter(word_count, output_path):
+    if not os.path.exists(os.sep.join(output_path.split(os.sep)[0:-1])):
+        os.mkdir(os.sep.join(output_path.split(os.sep)[0:-1]))
 
 
 if __name__ == "__main__":
@@ -275,8 +286,12 @@ if __name__ == "__main__":
     combined_chart_image_folder = os.getcwd() + os.sep + "data" + os.sep + "plots" + os.sep + "combined_charts"
     combined_chart_gif_path = os.getcwd() + os.sep + "data" + os.sep + "plots" + os.sep + "combined_charts.gif"
 
+    tweet_sentiment_data_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_sentiment_result.csv"
+    tweet_sentiment_output_path = os.getcwd() + os.sep + "data" + os.sep + "tweet_sentiment.png"
+
     tweet_token_distribution_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_token_distribution.csv"
-    tweet_word_cloud_directory = os.getcwd() + os.sep + "data" + os.sep + "plots" + os.sep + "wc.png"
+    tweet_word_cloud_output_path = os.getcwd() + os.sep + "data" + os.sep + "plots" + os.sep + "tweet_word_cloud.png"
+    tweet_wc_distribution_output_path = os.getcwd() + os.sep + "data" + os.sep + "tweet_word_distribution.png"
 
     # cases_count_daily = load_cases_count(location_data_results_path)
     # token_count_daily = load_tweet_token_count(tweet_tokenized_directory)
@@ -293,18 +308,14 @@ if __name__ == "__main__":
     # plot_combined(cases_count_daily, token_count_daily, combined_chart_image_folder)
     # make_gif(combined_chart_image_folder, combined_chart_gif_path)
 
-    # TODO: Plot sentiment count
     print("Plotting Tweet sentiment count...")
-
+    plot_tweet_sentiment(tweet_sentiment_data_directory, tweet_sentiment_output_path)
 
     print("Creating Word Cloud...")
     word_count_daily, word_count_total = tweet_wordcount_frequency_distribution(tweet_tokenized_directory, tweet_token_distribution_directory)
-    tweet_word_cloud_maker(word_count_total, red_color_func, tweet_word_cloud_directory)
+    tweet_word_cloud_maker(word_count_total, red_color_func, tweet_word_cloud_output_path)
 
-
-    # TODO: Plot word count distribution
     print("Plotting word count distribution...")
-
-
+    tweet_word_cloud_distribution_plotter(word_count_total, tweet_wc_distribution_output_path)
 
     print("Visualization Complete!")
