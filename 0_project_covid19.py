@@ -15,17 +15,19 @@ import shutil
 import stat
 import re
 import copy
-import queue
-import threading
-import itertools
 import csv
 import string
 import random
+import queue
+import threading
+import itertools
 import collections
 import pickle
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from tqdm import tqdm
+from PIL import Image
 
 import gensim
 from gensim import corpora
@@ -227,37 +229,6 @@ def tweet_sentiment_analyzer(data, classifier, file_path, verbose=False):
             print(date, result_list.count("Negative"), result_list.count("Neutral"), result_list.count("Positive"))
 
 
-def tweet_wordcount_frequency_distribution(input_path, output_path):
-    wordcount_daily = {}
-    wordcount_list = []
-    for file_name in os.listdir(input_path):
-        if "count" in file_name:
-            date = file_name.split('_')[0]
-            file = open(input_path + os.sep + file_name)
-            lines = file.readlines()
-            lines.pop(0)
-            file.close()
-            wordcount_daily[date] = []
-            item_list = {}
-            for item in lines:
-                word = item.replace('\n', '').split(',')[0]
-                count = item.replace('\n', '').split(',')[1]
-                item_list[word] = int(count)
-            wordcount_daily[date].append(collections.Counter(item_list))
-            wordcount_list.append(collections.Counter(item_list))
-    wordcount_total = sum(wordcount_list, collections.Counter())
-
-    file = open(output_path, "a+")
-    file.truncate(0)
-    file.write("word,count\n")
-    for word, count in wordcount_total.most_common():
-        file.write(word + "," + str(count) + '\n')
-        file.flush()
-    file.close()
-
-    return wordcount_daily, wordcount_total
-
-
 def load_tweet_tokens(input_path):
     token_list_daily = {}
     token_list_total = []
@@ -376,7 +347,6 @@ if __name__ == "__main__":
     tweet_topic_modeling_result_daily_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_topic_modeling_result_daily.csv"
     tweet_dominant_topic_result_daily_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_dominant_topic_result_daily.csv"
 
-    tweet_token_distribution_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_token_distribution.csv"
     tweet_training_data_path = os.getcwd() + os.sep + "data" + os.sep + "training_data_t4sa" + os.sep + "training_data_t4sa.csv"
     tweet_classifier_model_path = os.getcwd() + os.sep + "data" + os.sep + "classifier" + os.sep + "NaiveBayesClassifier_1M.pickle"
 
@@ -398,7 +368,6 @@ if __name__ == "__main__":
     tweet_sentiment_analyzer(tweet_data, classifier, tweet_sentiment_result_directory, verbose=False)
 
     print("Processing Topic Modeling...")
-    wordcount_daily, wordcount_total = tweet_wordcount_frequency_distribution(tweet_tokenized_directory, tweet_token_distribution_directory)
     tweet_tokens_daily, tweet_tokens_total = load_tweet_tokens(tweet_tokenized_directory)
     tweet_daily_topic_modeling(5, tweet_tokens_daily, tweet_topic_modeling_result_daily_directory)
     tweet_daily_dominant_topic(5, tweet_tokens_daily, tweet_dominant_topic_result_daily_directory)

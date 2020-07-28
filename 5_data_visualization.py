@@ -6,12 +6,13 @@ import collections
 import imageio
 import numpy as np
 import pandas as pd
+import wordcloud
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import matplotlib.animation as animation
 import matplotlib.dates as mdates
 import matplotlib.cbook as cbook
-from IPython.display import HTML
+from PIL import Image
 
 
 def delete_folder(path):
@@ -201,6 +202,65 @@ def make_gif(image_folder_path, output_path):
     imageio.mimsave(output_path, images, fps=7)
 
 
+def tweet_wordcount_frequency_distribution(input_path, output_path):
+    wordcount_daily = {}
+    wordcount_list = []
+    for file_name in os.listdir(input_path):
+        if "count" in file_name:
+            date = file_name.split('_')[0]
+            file = open(input_path + os.sep + file_name)
+            lines = file.readlines()
+            lines.pop(0)
+            file.close()
+            wordcount_daily[date] = []
+            item_list = {}
+            for item in lines:
+                word = item.replace('\n', '').split(',')[0]
+                count = item.replace('\n', '').split(',')[1]
+                item_list[word] = int(count)
+            wordcount_daily[date].append(collections.Counter(item_list))
+            wordcount_list.append(collections.Counter(item_list))
+    wordcount_total = sum(wordcount_list, collections.Counter())
+
+    file = open(output_path, "a+")
+    file.truncate(0)
+    file.write("word,count\n")
+    for word, count in wordcount_total.most_common():
+        file.write(word + "," + str(count) + '\n')
+        file.flush()
+    file.close()
+
+    return wordcount_daily, wordcount_total
+
+
+def red_color_func(word=None, font_size=None, position=None, orientation=None, font_path=None, random_state=None):
+    # Function for creating color gradient base on word font size (frequency)
+    lmin = 20.0
+    lmax = 65.0
+    hue = 10
+    saturation = 100
+    luminance = int((lmax - lmin) * (float(font_size) / 500.0) + lmin)
+    return "hsl({}, {}%, {}%)".format(hue, saturation, luminance)
+
+
+def tweet_word_cloud_maker(word_count, color_func, output_path):
+    if not os.path.exists(os.sep.join(output_path.split(os.sep)[0:-1])):
+        os.mkdir(os.sep.join(output_path.split(os.sep)[0:-1]))
+
+    word_cloud = wordcloud.WordCloud(width=1600, height=900)
+    word_cloud.max_font_size = 500
+    word_cloud.min_font_size = 15
+    word_cloud.background_color = "white"
+    word_cloud.color_func = color_func
+    wc_image = word_cloud.generate_from_frequencies(word_count)
+    plt.figure(figsize=(12, 12), facecolor=None)
+    plt.imshow(wc_image, interpolation="bilinear")
+    plt.axis("off")
+    plt.savefig(output_path, bbox_inches='tight', transparent=True)
+    image = Image.open(output_path)
+    # image.show()
+
+
 if __name__ == "__main__":
     print("Running Data Visualizer...")
     location_data_results_path = os.getcwd() + os.sep + "data" + os.sep + "daily_us_confirmed_cases.csv"
@@ -215,22 +275,36 @@ if __name__ == "__main__":
     combined_chart_image_folder = os.getcwd() + os.sep + "data" + os.sep + "plots" + os.sep + "combined_charts"
     combined_chart_gif_path = os.getcwd() + os.sep + "data" + os.sep + "plots" + os.sep + "combined_charts.gif"
 
-    cases_count_daily = load_cases_count(location_data_results_path)
-    token_count_daily = load_tweet_token_count(tweet_tokenized_directory)
-    # format_data(cases_count_daily, token_count_daily, combined_data_path)
+    tweet_token_distribution_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_token_distribution.csv"
+    tweet_word_cloud_directory = os.getcwd() + os.sep + "data" + os.sep + "plots" + os.sep + "wc.png"
 
-    print("Plotting daily top token count...")
-    plot_daily_token_count(token_count_daily, bar_chart_image_folder)
-    make_gif(bar_chart_image_folder, bar_chart_gif_path)
+    # cases_count_daily = load_cases_count(location_data_results_path)
+    # token_count_daily = load_tweet_token_count(tweet_tokenized_directory)
 
-    print("Plotting number of confirmed cases...")
-    plot_daily_cases_count(cases_count_daily, line_chart_image_folder)
-    make_gif(line_chart_image_folder, line_chart_gif_path)
+    # print("Plotting daily top token count...")
+    # plot_daily_token_count(token_count_daily, bar_chart_image_folder)
+    # make_gif(bar_chart_image_folder, bar_chart_gif_path)
+    #
+    # print("Plotting number of confirmed cases...")
+    # plot_daily_cases_count(cases_count_daily, line_chart_image_folder)
+    # make_gif(line_chart_image_folder, line_chart_gif_path)
+    #
+    # print("Plotting combined graphic...")
+    # plot_combined(cases_count_daily, token_count_daily, combined_chart_image_folder)
+    # make_gif(combined_chart_image_folder, combined_chart_gif_path)
 
-    print("Plotting combined graphic...")
-    plot_combined(cases_count_daily, token_count_daily, combined_chart_image_folder)
-    make_gif(combined_chart_image_folder, combined_chart_gif_path)
+    # TODO: Plot sentiment count
+    print("Plotting Tweet sentiment count...")
 
-    # TODO: Plot sentiment counts
+
+    print("Creating Word Cloud...")
+    word_count_daily, word_count_total = tweet_wordcount_frequency_distribution(tweet_tokenized_directory, tweet_token_distribution_directory)
+    tweet_word_cloud_maker(word_count_total, red_color_func, tweet_word_cloud_directory)
+
+
+    # TODO: Plot word count distribution
+    print("Plotting word count distribution...")
+
+
 
     print("Visualization Complete!")
