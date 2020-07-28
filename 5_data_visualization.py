@@ -91,7 +91,7 @@ def format_data(cases_count_daily, token_count_daily, output_path):
     file.close()
 
 
-def plot_cases(cases_data, output_path):
+def plot_daily_token_count(cases_data, output_path):
     if not os.path.exists(os.sep.join(output_path.split(os.sep)[0:-1])):
         os.mkdir(os.sep.join(output_path.split(os.sep)[0:-1]))
     if not os.path.exists(output_path):
@@ -101,7 +101,6 @@ def plot_cases(cases_data, output_path):
         os.mkdir(output_path)
 
     for date in cases_data:
-        print(date, cases_data[date].most_common(10))
         words = list(cases_data[date])[0:10]
         count = [cases_data[date][word] for word in words]
         y_pos = np.arange(len(words))
@@ -120,9 +119,10 @@ def plot_cases(cases_data, output_path):
 
         plt.savefig(output_path + os.sep + date + '.png')
         plt.close()
+        print(date, cases_data[date].most_common(10))
 
 
-def plot_location(location_data, output_path):
+def plot_daily_cases_count(location_data, output_path):
     if not os.path.exists(os.sep.join(output_path.split(os.sep)[0:-1])):
         os.mkdir(os.sep.join(output_path.split(os.sep)[0:-1]))
     if not os.path.exists(output_path):
@@ -135,11 +135,9 @@ def plot_location(location_data, output_path):
     x = np.arange(0, len(location_data), 1)
 
     for date in location_data:
-        print(date, location_data[date]["confirmed"])
         cases.append(float(location_data[date]["confirmed"]))
 
         plt.rcParams.update({'font.size': 16})
-
         fig, ax = plt.subplots()
         fig.set_figheight(8)
         fig.set_figwidth(16)
@@ -149,6 +147,7 @@ def plot_location(location_data, output_path):
         plt.plot(x[0:len(cases)], cases)
         plt.savefig(output_path + os.sep + date + '.png')
         plt.close()
+        print(date, location_data[date]["confirmed"])
 
 
 def plot_combined(location_data, cases_data, output_path):
@@ -162,12 +161,10 @@ def plot_combined(location_data, cases_data, output_path):
 
     common_dates = list(set(cases_data.keys()).intersection(set(location_data.keys())))
     common_dates.sort()
-
     cases = []
     x = np.arange(0, len(location_data), 1)
 
     for date in common_dates:
-
         cases.append(float(location_data[date]["confirmed"]))
         words = list(cases_data[date])[0:6]
         count = [cases_data[date][word] for word in words]
@@ -184,7 +181,7 @@ def plot_combined(location_data, cases_data, output_path):
         ax[0].set_ylim((0, 4000000))
         ax[0].set_ylabel("Number of Confirmed Cases", labelpad=20)
         ax[0].plot(x[0:len(cases)], cases, color='#9E1A1A', linewidth=5)
-        ax[0].plot(x[len(cases)-1], cases[-1], color='#9E1A1A' , marker='o', markerfacecolor='#9E1A1A', markersize=8)
+        ax[0].plot(x[len(cases) - 1], cases[-1], color='#9E1A1A', marker='o', markerfacecolor='#9E1A1A', markersize=8)
 
         ax[1].set_xlim((0, 600))
         ax[1].set_yticks(y_pos)
@@ -192,9 +189,9 @@ def plot_combined(location_data, cases_data, output_path):
         ax[1].invert_yaxis()
         ax[1].barh(y_pos, count, align='center')
 
-        print(date,common_dates[len(cases)-1], cases[-1])
         plt.savefig(output_path + os.sep + date + '.png')
         plt.close()
+        print(date, cases[-1])
 
 
 def make_gif(image_folder_path, output_path):
@@ -205,6 +202,7 @@ def make_gif(image_folder_path, output_path):
 
 
 if __name__ == "__main__":
+    print("Running Data Visualizer...")
     location_data_results_path = os.getcwd() + os.sep + "data" + os.sep + "daily_us_confirmed_cases.csv"
     tweet_tokenized_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_tokenized_tweets"
     combined_data_path = os.getcwd() + os.sep + "data" + os.sep + "bar_chart_race.csv"
@@ -221,14 +219,18 @@ if __name__ == "__main__":
     token_count_daily = load_tweet_token_count(tweet_tokenized_directory)
     # format_data(cases_count_daily, token_count_daily, combined_data_path)
 
-    print("Running Data Visualizer...")
-    plot_cases(token_count_daily, bar_chart_image_folder)
+    print("Plotting daily top token count...")
+    plot_daily_token_count(token_count_daily, bar_chart_image_folder)
     make_gif(bar_chart_image_folder, bar_chart_gif_path)
 
-    plot_location(cases_count_daily, line_chart_image_folder)
+    print("Plotting number of confirmed cases...")
+    plot_daily_cases_count(cases_count_daily, line_chart_image_folder)
     make_gif(line_chart_image_folder, line_chart_gif_path)
 
+    print("Plotting combined graphic...")
     plot_combined(cases_count_daily, token_count_daily, combined_chart_image_folder)
     make_gif(combined_chart_image_folder, combined_chart_gif_path)
+
+    # TODO: Plot sentiment counts
 
     print("Visualization Complete!")
