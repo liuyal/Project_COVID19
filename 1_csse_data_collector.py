@@ -115,13 +115,7 @@ def to_data_frame(data):
     return data_frame_list
 
 
-def df2db(db_name, table_name, df):
-    db_connection = sqlite3.connect(db_name)
-    data_frame = pd.concat(df, axis=0, join='outer', sort=False, ignore_index=False, keys=None, levels=None, names=None, verify_integrity=False, copy=True)
-    data_frame.to_sql(table_name, db_connection, if_exists='replace', index=False)
-
-
-def process_location_data(data_frame, file_path):
+def process_daily_cases_us(data_frame, file_path):
     df = pd.concat(data_frame, axis=0, join='outer', sort=False, ignore_index=False, keys=None, levels=None, names=None, verify_integrity=False, copy=True)
     daily_us = df.loc[df["Country_Region"] == "US"]
     aggregate = {"Confirmed": "sum", "Deaths": "sum", "Recovered": "sum"}
@@ -130,25 +124,42 @@ def process_location_data(data_frame, file_path):
     return daily_us_total
 
 
+def process_daily_cases_global(data_frame, file_path):
+    df = pd.concat(data_frame, axis=0, join='outer', sort=False, ignore_index=False, keys=None, levels=None, names=None, verify_integrity=False, copy=True)
+    aggregate = {"Confirmed": "sum", "Deaths": "sum", "Recovered": "sum"}
+    daily_total = df.groupby("Date").agg(aggregate).reset_index()
+    daily_total.to_csv(file_path)
+    return daily_total
+
+
+def df2db(df, table_name, db_name):
+    db_connection = sqlite3.connect(db_name)
+    data_frame = pd.concat(df, axis=0, join='outer', sort=False, ignore_index=False, keys=None, levels=None, names=None, verify_integrity=False, copy=True)
+    data_frame.to_sql(table_name, db_connection, if_exists='replace', index=False)
+
+
 if __name__ == "__main__":
     nCoV2019_CSSE_repo = r"https://github.com/CSSEGISandData/COVID-19.git"
     nCoV2019_CSSE_data_url = r"https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_daily_reports"
     nCoV2019_CSSE_data_path = os.getcwd() + os.sep + "data" + os.sep + nCoV2019_CSSE_repo.split('/')[-1].split('.')[0].lower().replace('-', '_') + "_location_data"
-    location_data_results_path = os.getcwd() + os.sep + "data" + os.sep + "daily_us_confirmed_cases.csv"
+    daily_us_cases_results_path = os.getcwd() + os.sep + "data" + os.sep + "daily_us_confirmed_cases.csv"
+    daily_global_cases_results_path = os.getcwd() + os.sep + "data" + os.sep + "daily_global_confirmed_cases.csv"
+    db_path = os.getcwd() + os.sep + "data" + os.sep + "covid19_csse_database.db"
 
     print("Checking COVID-19 GIT REPO data...")
     check_repo_data(nCoV2019_CSSE_data_path, nCoV2019_CSSE_data_url, "2020-01-01")
 
-    print("Loading COVID-19 Locations data...")
-    location_data = load_data(nCoV2019_CSSE_data_path, "2020-01-01")
+    print("Loading COVID-19 CSSE data...")
+    csse_data = load_data(nCoV2019_CSSE_data_path, "2020-01-01")
 
-    print("Creating COVID-19 Locations Data Frames...")
-    location_data_frame = to_data_frame(location_data)
+    print("Creating COVID-19 CSSE Data Frames...")
+    csse_data_frame = to_data_frame(csse_data)
 
-    print("Processing COVID-19 Locations Data Frames...")
-    process_location_data(location_data_frame, location_data_results_path)
+    print("Processing COVID-19 CSSE Data Frames...")
+    process_daily_cases_us(csse_data_frame, daily_us_cases_results_path)
+    process_daily_cases_global(csse_data_frame, daily_global_cases_results_path)
 
-    print("Generating COVID-19 Locations Sqlite DB...")
-    df2db("data" + os.sep + "covid19_csse_database.db", "locations", location_data_frame)
+    print("Generating COVID-19 Confirmed Cases Sqlite DB...")
+    df2db(csse_data_frame, "cases", db_path)
 
     print("CSSE Data Collection Complete!")

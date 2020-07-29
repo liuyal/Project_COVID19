@@ -101,10 +101,11 @@ def tweet_tokenize(data, nlp, words, output_path):
 
 if __name__ == "__main__":
     tweet_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_filtered_tweets"
-    tweet_data = load_csv_data(tweet_directory)
+
     nlp = spacy.load("en")
     words = set(nltk.corpus.words.words())
 
-    print("Tokenizing Filtered Tweets...")
+    print("Tokenizing Tweets...")
+    tweet_data = load_csv_data(tweet_directory)
     tweet_tokenize(tweet_data, nlp, words, os.getcwd() + os.sep + "data" + os.sep + "covid_19_tokenized_tweets")
     print("Tokenizer Complete!")

@@ -2,6 +2,7 @@
 # DATE: 2020/08/10
 # AUTHOR: Jerry Liu
 # EMAIL: Liuyal@sfu.ca
+# GITHUB: https://github.com/liuyal/Project_COVID19
 #
 # DESCRIPTION:
 # COVID-19 Data Mining Project
@@ -23,17 +24,13 @@ import threading
 import itertools
 import collections
 import pickle
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from tqdm import tqdm
-from PIL import Image
-
 import gensim
-from gensim import corpora
-
 import spacy
 import nltk
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
+from gensim import corpora
 from nltk.corpus import twitter_samples
 from nltk.corpus import stopwords
 from nltk.tag import pos_tag
@@ -48,7 +45,8 @@ def print_header(path):
     file.close()
     print("\nDATE: 2020/08/10")
     print("AUTHOR: Jerry Liu")
-    print("EMAIL: Liuyal@sfu.ca\n")
+    print("EMAIL: Liuyal@sfu.ca")
+    print("LINK: https://github.com/liuyal/Project_COVID19\n")
 
 
 def load_nltk_packages():
@@ -344,8 +342,8 @@ if __name__ == "__main__":
     tweet_sentiment_result_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_sentiment_result.csv"
     tweet_tokenized_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_tokenized_tweets"
 
-    tweet_topic_modeling_result_daily_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_topic_modeling_result_daily.csv"
-    tweet_dominant_topic_result_daily_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_dominant_topic_result_daily.csv"
+    tweet_topic_modeling_result_daily_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_topic_modeling_result.csv"
+    tweet_dominant_topic_result_daily_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_dominant_topic_result.csv"
 
     tweet_training_data_path = os.getcwd() + os.sep + "data" + os.sep + "training_data_t4sa" + os.sep + "training_data_t4sa.csv"
     tweet_classifier_model_path = os.getcwd() + os.sep + "data" + os.sep + "classifier" + os.sep + "NaiveBayesClassifier_1M.pickle"

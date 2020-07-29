@@ -67,15 +67,16 @@ def check_updated(hydrate_directory, filtered_directory, data):
 
 
 if __name__ == "__main__":
-    nlp = spacy.load("en")
-    nlp.add_pipe(LanguageDetector(), name='language_detector', last=True)
-
     tweet_id_repo = r"https://github.com/echen102/COVID-19-TweetIDs"
     hydrate_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_hydrated_tweets"
     filtered_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_filtered_tweets"
+
+    nlp = spacy.load("en")
+    nlp.add_pipe(LanguageDetector(), name='language_detector', last=True)
 
     print("Running Tweet Filter...")
     tweet_data = load_csv_data(hydrate_directory)
     tweet_data_updated = check_updated(hydrate_directory, filtered_directory, tweet_data)
     tweet_language_filter(filtered_directory, tweet_data_updated)
+
     print("Filter Complete!")

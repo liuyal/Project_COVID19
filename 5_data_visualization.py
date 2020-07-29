@@ -8,8 +8,6 @@ import numpy as np
 import pandas as pd
 import wordcloud
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-import matplotlib.animation as animation
 import matplotlib.dates as mdates
 import matplotlib.cbook as cbook
 from PIL import Image
@@ -120,7 +118,6 @@ def plot_daily_token_count(cases_data, output_path):
 
         plt.savefig(output_path + os.sep + date + '.png')
         plt.close()
-        print(date, cases_data[date].most_common(10))
 
 
 def plot_daily_cases_count(location_data, output_path):
@@ -148,7 +145,6 @@ def plot_daily_cases_count(location_data, output_path):
         plt.plot(x[0:len(cases)], cases)
         plt.savefig(output_path + os.sep + date + '.png')
         plt.close()
-        print(date, location_data[date]["confirmed"])
 
 
 def plot_combined(location_data, cases_data, output_path):
@@ -192,7 +188,6 @@ def plot_combined(location_data, cases_data, output_path):
 
         plt.savefig(output_path + os.sep + date + '.png')
         plt.close()
-        print(date, cases[-1])
 
 
 def make_gif(image_folder_path, output_path):
@@ -240,7 +235,6 @@ def plot_tweet_sentiment(input_path, output_path):
 
 
 def red_color_func(word=None, font_size=None, position=None, orientation=None, font_path=None, random_state=None):
-    # Function for creating color gradient base on word font size (frequency)
     lmin = 20.0
     lmax = 65.0
     hue = 10
@@ -273,45 +267,43 @@ def tweet_word_cloud_distribution_plotter(word_count, output_path):
 
 
 if __name__ == "__main__":
-    print("Running Data Visualizer...")
-    location_data_results_path = os.getcwd() + os.sep + "data" + os.sep + "daily_us_confirmed_cases.csv"
+    daily_us_cases_data_results_path = os.getcwd() + os.sep + "data" + os.sep + "daily_us_confirmed_cases.csv"
     tweet_tokenized_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_tokenized_tweets"
-    combined_data_path = os.getcwd() + os.sep + "data" + os.sep + "bar_chart_race.csv"
 
-    bar_chart_image_folder = os.getcwd() + os.sep + "data" + os.sep + "plots" + os.sep + "bar_charts"
-    bar_chart_gif_path = os.getcwd() + os.sep + "data" + os.sep + "plots" + os.sep + "bar_charts.gif"
-    line_chart_image_folder = os.getcwd() + os.sep + "data" + os.sep + "plots" + os.sep + "line_charts"
-    line_chart_gif_path = os.getcwd() + os.sep + "data" + os.sep + "plots" + os.sep + "line_charts.gif"
-
-    combined_chart_image_folder = os.getcwd() + os.sep + "data" + os.sep + "plots" + os.sep + "combined_charts"
-    combined_chart_gif_path = os.getcwd() + os.sep + "data" + os.sep + "plots" + os.sep + "combined_charts.gif"
+    word_count_chart_image_folder = os.getcwd() + os.sep + "data" + os.sep + "images" + os.sep + "plot_word_count"
+    word_count_chart_gif_path = os.getcwd() + os.sep + "data" + os.sep + "images" + os.sep + "plot_word_count.gif"
+    confirmed_cases_chart_image_folder = os.getcwd() + os.sep + "data" + os.sep + "images" + os.sep + "plot_confirmed_cases"
+    confirmed_cases_chart_gif_path = os.getcwd() + os.sep + "data" + os.sep + "images" + os.sep + "plot_confirmed_cases.gif"
+    combined_chart_image_folder = os.getcwd() + os.sep + "data" + os.sep + "images" + os.sep + "plot_combined"
+    combined_chart_gif_path = os.getcwd() + os.sep + "data" + os.sep + "images" + os.sep + "plot_combined.gif"
 
     tweet_sentiment_data_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_sentiment_result.csv"
-    tweet_sentiment_output_path = os.getcwd() + os.sep + "data" + os.sep + "tweet_sentiment.png"
-
     tweet_token_distribution_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_token_distribution.csv"
-    tweet_word_cloud_output_path = os.getcwd() + os.sep + "data" + os.sep + "plots" + os.sep + "tweet_word_cloud.png"
-    tweet_wc_distribution_output_path = os.getcwd() + os.sep + "data" + os.sep + "tweet_word_distribution.png"
 
-    # cases_count_daily = load_cases_count(location_data_results_path)
-    # token_count_daily = load_tweet_token_count(tweet_tokenized_directory)
+    tweet_sentiment_output_path = os.getcwd() + os.sep + "data" + os.sep + "tweet_sentiment.png"
+    tweet_word_cloud_output_path = os.getcwd() + os.sep + "data" + os.sep + "images" + os.sep + "tweet_word_cloud.png"
+    tweet_wc_distribution_output_path = os.getcwd() + os.sep + "data" + os.sep + "images" + os.sep + "tweet_word_distribution.png"
 
-    # print("Plotting daily top token count...")
-    # plot_daily_token_count(token_count_daily, bar_chart_image_folder)
-    # make_gif(bar_chart_image_folder, bar_chart_gif_path)
-    #
-    # print("Plotting number of confirmed cases...")
-    # plot_daily_cases_count(cases_count_daily, line_chart_image_folder)
-    # make_gif(line_chart_image_folder, line_chart_gif_path)
-    #
-    # print("Plotting combined graphic...")
-    # plot_combined(cases_count_daily, token_count_daily, combined_chart_image_folder)
-    # make_gif(combined_chart_image_folder, combined_chart_gif_path)
+    print("Running Data Visualizer...")
+    cases_count_daily = load_cases_count(daily_us_cases_data_results_path)
+    token_count_daily = load_tweet_token_count(tweet_tokenized_directory)
+
+    print("Plotting daily top token count...")
+    plot_daily_token_count(token_count_daily, word_count_chart_image_folder)
+    make_gif(word_count_chart_image_folder, word_count_chart_gif_path)
+
+    print("Plotting daily number of confirmed cases US...")
+    plot_daily_cases_count(cases_count_daily, confirmed_cases_chart_image_folder)
+    make_gif(confirmed_cases_chart_image_folder, confirmed_cases_chart_gif_path)
+
+    print("Plotting combined token/cases chart...")
+    plot_combined(cases_count_daily, token_count_daily, combined_chart_image_folder)
+    make_gif(combined_chart_image_folder, combined_chart_gif_path)
 
     print("Plotting Tweet sentiment count...")
     plot_tweet_sentiment(tweet_sentiment_data_directory, tweet_sentiment_output_path)
 
-    print("Creating Word Cloud...")
+    print("Generating Word Cloud...")
     word_count_daily, word_count_total = tweet_wordcount_frequency_distribution(tweet_tokenized_directory, tweet_token_distribution_directory)
     tweet_word_cloud_maker(word_count_total, red_color_func, tweet_word_cloud_output_path)
 
