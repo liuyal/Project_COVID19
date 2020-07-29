@@ -31,9 +31,10 @@ def delete_folder(path):
 
 
 def get_token(path):
-    f = open(path, "r")
-    keys = f.readlines()
-    f.close()
+    if not os.path.exists(path): path = "twitter.token"
+    file = open(path, "r")
+    keys = file.readlines()
+    file.close()
     CONSUMER_KEY = keys[0].split('"')[1]
     CONSUMER_SECRET = keys[1].split('"')[1]
     OAUTH_TOKEN = keys[2].split('"')[1]

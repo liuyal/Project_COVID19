@@ -3,18 +3,13 @@
 ## Introduction
 Coronavirus disease 2019 or COVID-19 is an infectious disease caused by severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2) [1]. First identified back in December 2019 in Wuhan province, China, the COVID-19 virus has resulted in nearly 15 million confirmed cases globally (as the writing of this report) [2]. Amidst the COVID-19 crisis, social media usage on platforms such as Facebook, WhatsApp, Twitter, and etc. has surged significantly [3]. As the general population rely heavily on social media platforms to gather the latest information in regards to the pandemic, resulting in an unprecedented amount of content and information.
 
-An interesting data mining topic to focus on for the COVID-19 pandemic is to determine the relationship between COVID-19 related trending topics and sentiments on the social media platform Twitter, with the number of reported confirmed cases for a given country over a period of time. Topic modeling and Tweet sentiments classification could be a useful measurement for determining the general attitude expressed towards COVID-19 for a given population. Since the pandemic originated from Asia, and only after a three-month period where the virus quickly spread across North America totalling the number of confirmed cases to more than 10 million globally [2]; it would be very interesting to follow the change in daily trending topics of interest and tweet sentiments due to the influx of confirmed cases as COVID-19 begins to spread in a particular country or region.
+An interesting data mining topic to focus on for the COVID-19 pandemic is to determine the relationship between COVID-19 related trending topics and sentiments on the social media platform Twitter, with the number of reported confirmed cases for a given country over a period of time. Topic modeling and Tweet sentiments classification could be a useful measurement for determining the general attitude expressed towards COVID-19 for a given population. Since the pandemic originated from Asia, and only after a three-month period where the virus quickly spread across North America totaling the number of confirmed cases to more than 10 million globally [2]; it would be very interesting to follow the change in daily trending topics of interest and tweet sentiments due to the influx of confirmed cases as COVID-19 begins to spread in a particular country or region.
 
 The measurement of relationship between the growth of the pandemic and social media topics and semantics can help determine how a general population express their opinions, concerns, and general awareness throughout a global event. As such, semantics information and topic modeling can be used by government bodies around the world to determine the general population’s level of attitude towards the pandemic as it grows, and how to issue proper procedures and implement restriction in times of crisis for future global events or pandemics.
 
-## Data Mining Method
- - TBA
-
-## Results
- - TBA
-
 ## How to Run
- - TBA
+ - Input Twitter API Credentials to twitter.token ([GUIDE](https://projects.raspberrypi.org/en/projects/getting-started-with-the-twitter-api/2))
+ - Run master script with python 3.6+ `python 0_project_covid19.py`
 
 ## Reference
 - [1] M. Clinic, “Coronavirus disease 2019 (COVID-19),” Mayo Clinic, 16-Jun-2020. [Online]. Available: https://www.mayoclinic.org/diseases-conditions/coronavirus/symptoms-causes/syc-20479963. [Accessed: 25-Jun-2020].
