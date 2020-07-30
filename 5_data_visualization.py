@@ -176,7 +176,7 @@ def plot_combined(location_data, cases_data, output_path):
         ax[0].set_xticks([])
         ax[0].set_xlim((0, 180))
         ax[0].set_ylim((0, 4000000))
-        ax[0].set_ylabel("Number of Confirmed Cases", labelpad=20)
+        ax[0].set_ylabel("Number of Confirmed Cases (US)", labelpad=20)
         ax[0].plot(x[0:len(cases)], cases, color='#9E1A1A', linewidth=5)
         ax[0].plot(x[len(cases) - 1], cases[-1], color='#9E1A1A', marker='o', markerfacecolor='#9E1A1A', markersize=8)
 
