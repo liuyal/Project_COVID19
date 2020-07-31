@@ -208,6 +208,7 @@ def validate_classifier(classifier):
 
 
 def tweet_sentiment_analyzer(data, classifier, file_path, verbose=False):
+    # TODO: only update
     file = open(file_path, "a+")
     file.truncate(0)
     file.write("date,Negative,Neutral,Positive\n")

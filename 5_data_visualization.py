@@ -285,20 +285,20 @@ if __name__ == "__main__":
     tweet_wc_distribution_output_path = os.getcwd() + os.sep + "data" + os.sep + "images" + os.sep + "tweet_word_distribution.png"
 
     print("Running Data Visualizer...")
-    cases_count_daily = load_cases_count(daily_us_cases_data_results_path)
-    token_count_daily = load_tweet_token_count(tweet_tokenized_directory)
-    
-    print("Plotting daily top token count...")
-    plot_daily_token_count(token_count_daily, word_count_chart_image_folder)
-    make_gif(word_count_chart_image_folder, word_count_chart_gif_path)
-    
-    print("Plotting daily number of confirmed cases US...")
-    plot_daily_cases_count(cases_count_daily, confirmed_cases_chart_image_folder)
-    make_gif(confirmed_cases_chart_image_folder, confirmed_cases_chart_gif_path)
-    
-    print("Plotting combined token/cases chart...")
-    plot_combined(cases_count_daily, token_count_daily, combined_chart_image_folder)
-    make_gif(combined_chart_image_folder, combined_chart_gif_path)
+    # cases_count_daily = load_cases_count(daily_us_cases_data_results_path)
+    # token_count_daily = load_tweet_token_count(tweet_tokenized_directory)
+    #
+    # print("Plotting daily top token count...")
+    # plot_daily_token_count(token_count_daily, word_count_chart_image_folder)
+    # make_gif(word_count_chart_image_folder, word_count_chart_gif_path)
+    #
+    # print("Plotting daily number of confirmed cases US...")
+    # plot_daily_cases_count(cases_count_daily, confirmed_cases_chart_image_folder)
+    # make_gif(confirmed_cases_chart_image_folder, confirmed_cases_chart_gif_path)
+    #
+    # print("Plotting combined token/cases chart...")
+    # plot_combined(cases_count_daily, token_count_daily, combined_chart_image_folder)
+    # make_gif(combined_chart_image_folder, combined_chart_gif_path)
 
     print("Plotting Tweet sentiment count...")
     plot_tweet_sentiment(tweet_sentiment_data_directory, tweet_sentiment_output_path)
