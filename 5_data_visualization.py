@@ -9,6 +9,8 @@
 
 import os
 import sys
+import time
+import datetime
 import shutil
 import stat
 import collections
@@ -233,14 +235,50 @@ def tweet_wordcount_frequency_distribution(input_path, output_path):
         file.write(word + "," + str(count) + '\n')
         file.flush()
     file.close()
-
     return wordcount_daily, wordcount_total
 
 
-# TODO: Plot sentiment count
 def plot_tweet_sentiment(input_path, output_path):
     if not os.path.exists(os.sep.join(output_path.split(os.sep)[0:-1])):
         os.mkdir(os.sep.join(output_path.split(os.sep)[0:-1]))
+
+    file = open(input_path, "r")
+    raw_text = file.readlines()
+    file.close()
+    header = raw_text.pop(0).replace('\n', '').split(',')
+
+    date = []
+    negative_values = []
+    neutral_values = []
+    positive_values = []
+    for line in raw_text:
+        values = line.replace('\n', '').split(',')
+        date.append(values[0])
+        negative_values.append(int(values[1]))
+        neutral_values.append(int(values[2]))
+        positive_values.append(int(values[3]))
+
+    plt.rc('xtick', labelsize=16)
+    plt.rc('ytick', labelsize=16)
+    fig, ax = plt.subplots()
+    fig.set_figheight(8)
+    fig.set_figwidth(16)
+
+    date = [datetime.datetime.strptime(day, '%Y-%m-%d') for day in date]
+    plt.plot(date, negative_values, label=header[1], color='#c00000', linewidth=3)
+    plt.plot(date, neutral_values, label=header[2], color='#a5a5a5', linewidth=3)
+    plt.plot(date, positive_values, label=header[3], color='#00b050', linewidth=3)
+    plt.legend(loc="upper right", fontsize=12, ncol=3, edgecolor='b')
+
+    x_axis = plt.gca().xaxis
+    x_axis.set_major_locator(mdates.MonthLocator())
+    x_axis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
+    ax.set_xlim([datetime.date(2020, 1, 1), datetime.date(2020, 8, 1)])
+    ax.set_ylim([0, 700])
+
+    plt.grid(linestyle='dotted')
+    plt.savefig(output_path)
+    plt.close()
 
 
 def red_color_func(word=None, font_size=None, position=None, orientation=None, font_path=None, random_state=None):
@@ -266,13 +304,35 @@ def tweet_word_cloud_maker(word_count, color_func, output_path):
     plt.axis("off")
     plt.savefig(output_path, bbox_inches='tight', transparent=True)
     image = Image.open(output_path)
-    # image.show()
 
 
 # TODO: Plot word count distribution
-def tweet_word_cloud_distribution_plotter(word_count, output_path):
+def tweet_word_count_distribution_plotter(word_count, output_path):
     if not os.path.exists(os.sep.join(output_path.split(os.sep)[0:-1])):
         os.mkdir(os.sep.join(output_path.split(os.sep)[0:-1]))
+
+    word_list = []
+    count_list = []
+    for word, count in word_count.most_common(10):
+        word_list.append(word)
+        count_list.append(count)
+        if len(word_list) > 10: break
+
+    y_pos = np.arange(len(word_list))
+
+    plt.rcParams.update({'font.size': 16})
+    fig, ax = plt.subplots()
+    fig.set_figheight(8)
+    fig.set_figwidth(16)
+
+    ax.barh(y_pos, count_list, align='center', color="#c00000")
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(word_list)
+    ax.invert_yaxis()
+    ax.set_xlim([0, 30000])
+
+    plt.savefig(output_path)
+    plt.close()
 
 
 if __name__ == "__main__":
@@ -288,9 +348,10 @@ if __name__ == "__main__":
 
     tweet_sentiment_data_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_sentiment_result.csv"
     tweet_token_distribution_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_token_distribution.csv"
-    tweet_sentiment_output_path = os.getcwd() + os.sep + "data" + os.sep + "tweet_sentiment.png"
+
+    tweet_sentiment_output_path = os.getcwd() + os.sep + "data" + os.sep + "images" + os.sep + "plot_tweet_sentiment.png"
     tweet_word_cloud_output_path = os.getcwd() + os.sep + "data" + os.sep + "images" + os.sep + "tweet_word_cloud.png"
-    tweet_wc_distribution_output_path = os.getcwd() + os.sep + "data" + os.sep + "images" + os.sep + "tweet_word_distribution.png"
+    tweet_wc_distribution_output_path = os.getcwd() + os.sep + "data" + os.sep + "images" + os.sep + "plot_tweet_word_distribution.png"
 
     print("Running Data Visualizer...")
     cases_count_daily = load_cases_count(daily_us_cases_data_results_path)
@@ -316,6 +377,6 @@ if __name__ == "__main__":
     tweet_word_cloud_maker(word_count_total, red_color_func, tweet_word_cloud_output_path)
 
     print("Plotting overall word frequency distribution...")
-    tweet_word_cloud_distribution_plotter(word_count_total, tweet_wc_distribution_output_path)
+    tweet_word_count_distribution_plotter(word_count_total, tweet_wc_distribution_output_path)
 
     print("Visualization Complete!")
