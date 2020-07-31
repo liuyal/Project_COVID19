@@ -4,7 +4,7 @@
 # EMAIL: Liuyal@sfu.ca
 #
 # DESCRIPTION:
-# Tweet hydrate script to get daily 1000 random tweets
+# Tweet ID collector & hydration script
 # ----------------------------------------------------------------------
 
 import os
@@ -44,13 +44,13 @@ def get_token(path):
     return tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 
 
-def id_request(id, url_list, q, n=1):
+def id_request(id, url_list, q, n=1, verbose=False):
     id_list = []
     for item in random.sample(url_list, n):
         response = requests.get(item)
         id_list = id_list + response.text.split('\n')
-        sys.stdout.write(id + " " + item + " " + "\n")
-    sys.stdout.write(id + " Complete!\n")
+        if verbose: sys.stdout.write(id + " " + item + " " + "\n")
+    if verbose: sys.stdout.write(id + " Complete!\n")
     q.put((id, id_list))
 
 
@@ -89,7 +89,6 @@ def curl_id(hydrate_directory, repo, start_date="2020-03-22", n=1):
                     file_list = {}
             else:
                 file_list = {}
-
     q = queue.Queue()
     thread_list = []
     for item in file_list:
@@ -101,7 +100,7 @@ def curl_id(hydrate_directory, repo, start_date="2020-03-22", n=1):
     return list(q.queue)
 
 
-def hydrate(id_log, hydrate_directory, api, start_date="2020-03-22", n=10):
+def hydrate(id_log, hydrate_directory, api, start_date="2020-03-22", n=10, verbose=False):
     if not os.path.exists(os.getcwd() + os.sep + "data"): os.makedirs(os.getcwd() + os.sep + "data")
     if not os.path.exists(hydrate_directory): os.mkdir(hydrate_directory)
 
@@ -160,23 +159,23 @@ def hydrate(id_log, hydrate_directory, api, start_date="2020-03-22", n=10):
                 file.write(",".join(data) + "\n")
                 file.flush()
             except Exception as e:
-                print("ERROR:", e)
+                if verbose: print("ERROR:", e)
 
         file.close()
-        print(date, " hydrate Complete!")
+        if verbose: print(date, " hydrate Complete!")
 
 
 if __name__ == "__main__":
     tweet_id_repo = r"https://github.com/echen102/COVID-19-TweetIDs"
     hydrate_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_hydrated_tweets"
 
-    print("Curl COVID-19 GIT Tweet ID...")
+    print("Checking COVID-19 Tweet ID GitHub REPO...")
     id_list = curl_id(hydrate_directory, tweet_id_repo, "2020-01-01", 1)
 
     print("Loading Twitter API KEYs...")
     api = get_token("jerry.token")
 
-    print("Hydrating COVID-19 Tweet text from ID...")
+    print("Hydrating COVID-19 Tweet Text...")
     hydrate(id_list, hydrate_directory, api, "2020-01-01", 1000)
 
-    print("Collector Complete!")
+    print("Tweet Collector Complete!")

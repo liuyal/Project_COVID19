@@ -4,7 +4,7 @@
 # EMAIL: Liuyal@sfu.ca
 #
 # DESCRIPTION:
-# CSSE confirmed cases data collector
+# CSSE global number of confirmed cases data collector
 # ----------------------------------------------------------------------
 
 import os
@@ -146,7 +146,7 @@ if __name__ == "__main__":
     daily_global_cases_results_path = os.getcwd() + os.sep + "data" + os.sep + "daily_global_confirmed_cases.csv"
     db_path = os.getcwd() + os.sep + "data" + os.sep + "covid19_csse_database.db"
 
-    print("Checking COVID-19 GIT REPO data...")
+    print("Checking COVID-19 CSSE GitHub REPO...")
     check_repo_data(nCoV2019_CSSE_data_path, nCoV2019_CSSE_data_url, "2020-01-01")
 
     print("Loading COVID-19 CSSE data...")

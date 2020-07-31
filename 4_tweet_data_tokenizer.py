@@ -1,3 +1,12 @@
+# ----------------------------------------------------------------------
+# DATE: 2020/08/10
+# AUTHOR: Jerry Liu
+# EMAIL: Liuyal@sfu.ca
+#
+# DESCRIPTION:
+# Tweet tokenizer script
+# ----------------------------------------------------------------------
+
 import os
 import sys
 import time
@@ -48,7 +57,7 @@ def language_process(raw_text, nlp, words):
     return output_tokens, word_collection
 
 
-def tweet_tokenize(data, nlp, words, output_path):
+def tweet_tokenize(data, nlp, words, output_path, verbose=False):
     if not os.path.exists(output_path):
         os.mkdir(output_path)
     else:
@@ -96,16 +105,15 @@ def tweet_tokenize(data, nlp, words, output_path):
                 file.write(word + "," + str(count) + "\n")
         file.flush()
         file.close()
-        print(date, "Completed!")
+        if verbose: print(date, "Completed!")
 
 
 if __name__ == "__main__":
     tweet_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_filtered_tweets"
-
     nlp = spacy.load("en")
     words = set(nltk.corpus.words.words())
 
-    print("Tokenizing Tweets...")
+    print("Tokenizing daily Tweets...")
     tweet_data = load_csv_data(tweet_directory)
     tweet_tokenize(tweet_data, nlp, words, os.getcwd() + os.sep + "data" + os.sep + "covid_19_tokenized_tweets")
-    print("Tokenizer Complete!")
+    print("Tweet Tokenizer Complete!")

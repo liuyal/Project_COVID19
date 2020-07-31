@@ -1,3 +1,12 @@
+# ----------------------------------------------------------------------
+# DATE: 2020/08/10
+# AUTHOR: Jerry Liu
+# EMAIL: Liuyal@sfu.ca
+#
+# DESCRIPTION:
+# Tweet language filter script
+# ----------------------------------------------------------------------
+
 import os
 import sys
 import time
@@ -29,7 +38,7 @@ def load_csv_data(file_directory):
     return data_output
 
 
-def language_filter_mt_helper(output_directory, date, data_list):
+def language_filter_mt_helper(output_directory, date, data_list, verbose=False):
     sys.stdout.write("Processing [" + date + "]...\n")
     file = open(output_directory + os.sep + date + ".csv", "a+", encoding='utf-8')
     file.truncate(0)
@@ -38,13 +47,13 @@ def language_filter_mt_helper(output_directory, date, data_list):
             doc = nlp(line[3])
             result = doc._.language
             if (result["language"] == 'en' and result["score"] > 0.5) or 'text' == line[3]:
-                sys.stdout.write("[" + date + "] " + ",".join(str(i) for i in line) + "\n")
+                if verbose: sys.stdout.write("[" + date + "] " + ",".join(str(i) for i in line) + "\n")
                 file.write(",".join(str(i) for i in line) + "\n")
                 file.flush()
         except Exception as e:
-            sys.stdout.write("ERROR: " + str(e))
+            if verbose: sys.stdout.write("ERROR: " + str(e))
     file.close()
-    sys.stdout.write(date + " Complete!\n")
+    if verbose: sys.stdout.write(date + " Complete!\n")
 
 
 def tweet_language_filter(output_directory, tweet_data):
@@ -74,9 +83,9 @@ if __name__ == "__main__":
     nlp = spacy.load("en")
     nlp.add_pipe(LanguageDetector(), name='language_detector', last=True)
 
-    print("Running Tweet Filter...")
+    print("Running English Tweet Filter...")
     tweet_data = load_csv_data(hydrate_directory)
     tweet_data_updated = check_updated(hydrate_directory, filtered_directory, tweet_data)
     tweet_language_filter(filtered_directory, tweet_data_updated)
 
-    print("Filter Complete!")
+    print("Tweet Filter Complete!")

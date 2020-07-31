@@ -6,6 +6,7 @@
 #
 # DESCRIPTION:
 # COVID-19 Data Mining Project
+# Main Script
 # ----------------------------------------------------------------------
 
 import os
@@ -207,21 +208,33 @@ def validate_classifier(classifier):
     print("Negative Tweet Detection Accuracy: " + str(100.0 * result_list.count("Negative") / len(result_list)) + "%")
 
 
-def tweet_sentiment_analyzer(data, classifier, file_path, verbose=False):
-    # TODO: only update
-    file = open(file_path, "a+")
-    file.truncate(0)
-    file.write("date,Negative,Neutral,Positive\n")
-    file.close()
-    for date in data:
+def tweet_sentiment_analyzer(data, classifier, output_path, verbose=False):
+    token_list = copy.deepcopy(data)
+    if not os.path.exists(output_path):
+        file = open(output_path, "a+")
+        file.truncate(0)
+        file.write("date,Negative,Neutral,Positive\n")
+        file.close()
+    else:
+        file = open(output_path, "r+")
+        output_dates = file.readlines()
+        file.close()
+        output_date_list = []
+        for line in output_dates[1:]:
+            output_date_list.append(line.split(',')[0])
+        for date in list(token_list.keys()):
+            if date not in set(list(token_list.keys())).difference(set(output_date_list)):
+                del token_list[date]
+
+    for date in token_list:
         result_list = []
-        for line in data[date]:
+        for line in token_list[date]:
             if line[3] != "text":
                 custom_tweet = line[3]
                 custom_tokens = word_tokenize(custom_tweet)
                 tokens = remove_noise(custom_tokens, stopwords.words('english'))
                 result_list.append(classifier.classify(dict([token, True] for token in tokens)))
-        file = open(file_path, "a+")
+        file = open(output_path, "a+")
         file.write(date + "," + str(result_list.count("Negative")) + "," + str(result_list.count("Neutral")) + "," + str(result_list.count("Positive")) + "\n")
         file.flush()
         file.close()
@@ -264,7 +277,7 @@ def tweet_daily_topic_modeling(num_topic, token_list, topic_output_path, dominan
         for date in list(token_list.keys()):
             input_date_list.append(date)
 
-        date_topic_list = set(input_date_list).difference(set(output_date_topic_list ))
+        date_topic_list = set(input_date_list).difference(set(output_date_topic_list))
         date_dominant_list = set(input_date_list).difference(set(output_date_dominant_list))
         for date in list(token_list.keys()):
             if date not in set(input_date_list).difference(set(output_date_topic_list + output_date_dominant_list)):
@@ -318,7 +331,7 @@ def tweet_daily_topic_modeling(num_topic, token_list, topic_output_path, dominan
             data = list(sent_topics_df.values.tolist())
             data.sort(key=lambda x: x[1], reverse=True)
             data = data[0]
-            data[-1] = data[-1].replace(',', ';').replace(' ','')
+            data[-1] = data[-1].replace(',', ';').replace(' ', '')
             file.write(date + ',' + str(lda_model.log_perplexity(corpus)) + ',' + str(coherence_lda) + ',' + ','.join([str(x) for x in data]) + '\n')
             file.flush()
             file.close()
@@ -328,35 +341,31 @@ def tweet_daily_topic_modeling(num_topic, token_list, topic_output_path, dominan
 if __name__ == "__main__":
     print_header(os.getcwd() + os.sep + "header.txt")
 
-    print("Loading NLTK Data Packages...")
+    print("Loading NLTK and Spacy Data Packages...")
     load_nltk_packages()
+    nlp = spacy.load("en")
 
     print("Checking for dataset updates...")
     dataset_check()
 
-    nlp = spacy.load("en")
-    words = set(nltk.corpus.words.words())
-
     tweet_filtered_data_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_filtered_tweets"
     tweet_sentiment_result_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_sentiment_result.csv"
     tweet_tokenized_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_tokenized_tweets"
-
     tweet_topic_modeling_result_daily_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_topic_modeling_result.csv"
     tweet_dominant_topic_result_daily_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_dominant_topic_result.csv"
-
     tweet_training_data_path = os.getcwd() + os.sep + "data" + os.sep + "training_data_t4sa" + os.sep + "training_data_t4sa.csv"
     tweet_classifier_model_path = os.getcwd() + os.sep + "data" + os.sep + "classifier" + os.sep + "NaiveBayesClassifier_1M.pickle"
 
-    print("Loading COVID-19 related datasets...")
+    print("Loading COVID-19 related Tweet datasets...")
     tweet_data = load_csv_data(tweet_filtered_data_directory)
 
-    print("Creating Data Frames...")
+    print("Creating Tweet Data Frames...")
     tweet_data_frame = to_data_frame(tweet_data)
 
-    print("Training/Loading Tweet Classifier Model...")
+    print("Loading/Training Tweet Sentiment Classification Model...")
     classifier = create_classifier_model(tweet_training_data_path, tweet_classifier_model_path, 9999999)
 
-    print("Testing Classifier Model on Example Tweets...")
+    print("Testing Sentiment Classification Model on Example Tweets...")
     validate_classifier(classifier)
 
     print("Processing Sentiment Analyzer...")
@@ -364,6 +373,6 @@ if __name__ == "__main__":
 
     print("Processing Topic Modeling...")
     tweet_tokens_daily, tweet_tokens_total = load_tweet_tokens(tweet_tokenized_directory)
-    tweet_daily_topic_modeling(10, tweet_tokens_daily, tweet_topic_modeling_result_daily_directory, tweet_dominant_topic_result_daily_directory, verbose=True)
+    tweet_daily_topic_modeling(10, tweet_tokens_daily, tweet_topic_modeling_result_daily_directory, tweet_dominant_topic_result_daily_directory, verbose=False)
 
     os.system("python " + os.getcwd() + os.sep + "5_data_visualization.py")
