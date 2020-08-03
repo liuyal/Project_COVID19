@@ -59,11 +59,13 @@ def load_nltk_packages():
     nltk.download("averaged_perceptron_tagger")
 
 
-def dataset_check():
+def dataset_check(data_path):
+    if not os.path.exists: os.mkdir(data_path)
     os.system("python " + os.getcwd() + os.sep + "1_csse_data_collector.py")
     os.system("python " + os.getcwd() + os.sep + "2_tweet_data_collector.py")
     os.system("python " + os.getcwd() + os.sep + "3_tweet_data_filter.py")
     os.system("python " + os.getcwd() + os.sep + "4_tweet_data_tokenizer.py")
+    os.system("python " + os.getcwd() + os.sep + "5_ts4a_training_data_extractor.py")
 
 
 def delete_folder(path):
@@ -339,6 +341,15 @@ def tweet_daily_topic_modeling(num_topic, token_list, topic_output_path, dominan
 
 
 if __name__ == "__main__":
+    data_directory = os.getcwd() + os.sep + "data"
+    tweet_filtered_data_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_filtered_tweets"
+    tweet_sentiment_result_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_sentiment_result.csv"
+    tweet_tokenized_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_tokenized_tweets"
+    tweet_topic_modeling_result_daily_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_topic_modeling_result.csv"
+    tweet_dominant_topic_result_daily_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_dominant_topic_result.csv"
+    tweet_training_data_path = os.getcwd() + os.sep + "data" + os.sep + "training_data_t4sa" + os.sep + "t4sa_training_data.csv"
+    tweet_classifier_model_path = os.getcwd() + os.sep + "data" + os.sep + "classifier" + os.sep + "NaiveBayesClassifier_1M.pickle"
+
     print_header(os.getcwd() + os.sep + "header.txt")
 
     print("Loading NLTK and Spacy Data Packages...")
@@ -346,15 +357,7 @@ if __name__ == "__main__":
     nlp = spacy.load("en")
 
     print("Checking for dataset updates...")
-    dataset_check()
-
-    tweet_filtered_data_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_filtered_tweets"
-    tweet_sentiment_result_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_sentiment_result.csv"
-    tweet_tokenized_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_tokenized_tweets"
-    tweet_topic_modeling_result_daily_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_topic_modeling_result.csv"
-    tweet_dominant_topic_result_daily_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_dominant_topic_result.csv"
-    tweet_training_data_path = os.getcwd() + os.sep + "data" + os.sep + "training_data_t4sa" + os.sep + "training_data_t4sa.csv"
-    tweet_classifier_model_path = os.getcwd() + os.sep + "data" + os.sep + "classifier" + os.sep + "NaiveBayesClassifier_1M.pickle"
+    dataset_check(data_directory)
 
     print("Loading COVID-19 related Tweet datasets...")
     tweet_data = load_csv_data(tweet_filtered_data_directory)
@@ -375,4 +378,5 @@ if __name__ == "__main__":
     tweet_tokens_daily, tweet_tokens_total = load_tweet_tokens(tweet_tokenized_directory)
     tweet_daily_topic_modeling(10, tweet_tokens_daily, tweet_topic_modeling_result_daily_directory, tweet_dominant_topic_result_daily_directory, verbose=False)
 
-    os.system("python " + os.getcwd() + os.sep + "5_data_visualization.py")
+    os.system("python " + os.getcwd() + os.sep + "6_data_visualization.py")
+    print("\nPROJECT COVID-19 COMPLETE!!!")

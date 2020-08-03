@@ -149,17 +149,13 @@ if __name__ == "__main__":
     print("Checking COVID-19 CSSE GitHub REPO...")
     check_repo_data(nCoV2019_CSSE_data_path, nCoV2019_CSSE_data_url, "2020-01-01")
 
-    print("Loading COVID-19 CSSE data...")
+    print("Processing COVID-19 CSSE Data...")
     csse_data = load_data(nCoV2019_CSSE_data_path, "2020-01-01")
-
-    print("Creating COVID-19 CSSE Data Frames...")
     csse_data_frame = to_data_frame(csse_data)
-
-    print("Processing COVID-19 CSSE Data Frames...")
     process_daily_cases_us(csse_data_frame, daily_us_cases_results_path)
     process_daily_cases_global(csse_data_frame, daily_global_cases_results_path)
 
-    print("Generating COVID-19 Confirmed Cases Sqlite DB...")
+    print("Generating Sqlite DB...")
     df2db(csse_data_frame, "cases", db_path)
 
     print("CSSE Data Collection Complete!")

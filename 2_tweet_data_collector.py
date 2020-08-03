@@ -44,20 +44,19 @@ def get_token(path):
     return tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 
 
-def id_request(id, url_list, q, n=1, verbose=False):
+def id_request(date, url_list, q, n=1, verbose=False):
     id_list = []
     for item in random.sample(url_list, n):
         response = requests.get(item)
         id_list = id_list + response.text.split('\n')
-        if verbose: sys.stdout.write(id + " " + item + " " + "\n")
-    if verbose: sys.stdout.write(id + " Complete!\n")
-    q.put((id, id_list))
+        if verbose: sys.stdout.write(date + " " + item + " " + "\n")
+    if verbose: sys.stdout.write(date + " Complete!\n")
+    q.put((date, id_list))
 
 
-def curl_id(hydrate_directory, repo, start_date="2020-03-22", n=1):
+def curl_id(repo, start_date, n, hydrate_directory):
     response = requests.get(repo)
     text_list = response.text.split('\n')
-
     folder_list = []
     for item in text_list:
         if "2020" in item and "js-navigation-open link-gray-dark" in item:
@@ -91,16 +90,80 @@ def curl_id(hydrate_directory, repo, start_date="2020-03-22", n=1):
                 file_list = {}
     q = queue.Queue()
     thread_list = []
-    for item in file_list:
-        if item > start_date:
-            thread_list.append(threading.Thread(target=id_request, args=(item, file_list[item], q, n)))
+    for date in file_list:
+        if date > start_date:
+            thread_list.append(threading.Thread(target=id_request, args=(date, file_list[date], q, n)))
     [item.start() for item in thread_list]
     [item.join() for item in thread_list]
-
     return list(q.queue)
 
 
-def hydrate(id_log, hydrate_directory, api, start_date="2020-03-22", n=10, verbose=False):
+def tweet_counter_mt_helper(date, data, q, verbose=False):
+    id_count = 0
+    for url in data:
+        response = requests.get(url)
+        id_count = id_count + len(response.text.split('\n'))
+        if verbose: sys.stdout.write(date + " " + url + " " + str(id_count) + "\n")
+    if verbose: sys.stdout.write(date + " Complete!\n")
+
+    q.put((date, id_count))
+
+
+def tweet_counter(repo, output_directory):
+    response = requests.get(repo)
+    text_list = response.text.split('\n')
+
+    folder_list = []
+    for item in text_list:
+        if "2020" in item and "js-navigation-open link-gray-dark" in item:
+            folder_list.append("https://github.com" + item[item.index('href="') + len('href="'): item.index('"', item.index('href="') + len('href="'), -1)])
+
+    file_list = {}
+    for item in folder_list:
+        response = requests.get(item)
+        text_list = response.text.split('\n')
+        for string in text_list:
+            if "coronavirus-tweet-id" in string and "js-navigation-open link-gray-dark" in string:
+                url = "https://raw.githubusercontent.com" + string[string.index('href="') + len('href="'): string.index('"', string.index('href="') + len('href="'), -1)]
+                date = "-".join(string.split("tweet-id-")[-1].split(".txt")[0].split("-")[0:-1])
+                if date not in list(file_list.keys()): file_list[date] = []
+                file_list[date].append(url.replace("blob/", ''))
+
+    if os.path.exists(output_directory):
+        file = open(output_directory)
+        text = file.readlines()
+        text.pop(0)
+        file.close()
+        existing_date_list = []
+        for line in text:
+            existing_date_list.append(line.split(',')[0])
+        delta = set(list(file_list.keys())).difference(set(existing_date_list))
+    else:
+        delta = []
+        file = open(output_directory, "a+")
+        file.truncate(0)
+        file.write("date,tweet_count\n")
+        file.flush()
+        file.close()
+
+    q = queue.Queue()
+    thread_list = []
+    for date in file_list:
+        if date in delta:
+            thread_list.append(threading.Thread(target=tweet_counter_mt_helper, args=(date, file_list[date], q)))
+    [item.start() for item in thread_list]
+    [item.join() for item in thread_list]
+    results = list(q.queue)
+    results.sort()
+
+    file = open(output_directory, "a+")
+    for date, tweet_count in results:
+        file.write(date + ',' + str(tweet_count) + '\n')
+    file.flush()
+    file.close()
+
+
+def hydrate(id_log, api, start_date, n, hydrate_directory, verbose=False):
     if not os.path.exists(os.getcwd() + os.sep + "data"): os.makedirs(os.getcwd() + os.sep + "data")
     if not os.path.exists(hydrate_directory): os.mkdir(hydrate_directory)
 
@@ -168,14 +231,18 @@ def hydrate(id_log, hydrate_directory, api, start_date="2020-03-22", n=10, verbo
 if __name__ == "__main__":
     tweet_id_repo = r"https://github.com/echen102/COVID-19-TweetIDs"
     hydrate_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_hydrated_tweets"
+    tweet_count_result_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_count_result.csv"
 
     print("Checking COVID-19 Tweet ID GitHub REPO...")
-    id_list = curl_id(hydrate_directory, tweet_id_repo, "2020-01-01", 1)
+    id_list = curl_id(tweet_id_repo, "2020-01-01", 1, hydrate_directory)
+
+    print("Counting Number of Tweets...")
+    tweet_counter(tweet_id_repo, tweet_count_result_directory)
 
     print("Loading Twitter API KEYs...")
     api = get_token("jerry.token")
 
     print("Hydrating COVID-19 Tweet Text...")
-    hydrate(id_list, hydrate_directory, api, "2020-01-01", 1000)
+    hydrate(id_list, api, "2020-01-01", 1000, hydrate_directory)
 
     print("Tweet Collector Complete!")
