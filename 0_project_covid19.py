@@ -341,17 +341,17 @@ def tweet_daily_topic_modeling(num_topic, token_list, topic_output_path, dominan
 
 
 if __name__ == "__main__":
+    header_path = os.getcwd() + os.sep + "header.txt"
     data_directory = os.getcwd() + os.sep + "data"
     tweet_filtered_data_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_filtered_tweets"
     tweet_sentiment_result_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_sentiment_result.csv"
     tweet_tokenized_directory = os.getcwd() + os.sep + "data" + os.sep + "covid_19_tokenized_tweets"
     tweet_topic_modeling_result_daily_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_topic_modeling_result.csv"
     tweet_dominant_topic_result_daily_directory = os.getcwd() + os.sep + "data" + os.sep + "tweet_dominant_topic_result.csv"
-    tweet_training_data_path = os.getcwd() + os.sep + "data" + os.sep + "training_data_t4sa" + os.sep + "t4sa_training_data.csv"
+    tweet_training_data_path = os.getcwd() + os.sep + "data" + os.sep + "t4sa_training_data" + os.sep + "t4sa_training_data.csv"
     tweet_classifier_model_path = os.getcwd() + os.sep + "data" + os.sep + "classifier" + os.sep + "NaiveBayesClassifier_1M.pickle"
 
-    print_header(os.getcwd() + os.sep + "header.txt")
-
+    print_header(header_path)
     print("Loading NLTK and Spacy Data Packages...")
     load_nltk_packages()
     nlp = spacy.load("en")

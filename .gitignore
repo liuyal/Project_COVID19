@@ -1,7 +1,7 @@
 .idea/*
 .ipynb_checkpoints/*
 data/classifier/*
-data/training_data_t4sa/*
+data/t4sa_training_data/*
 
 *.db
 *.sqbpro

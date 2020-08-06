@@ -10,7 +10,7 @@ The measurement of relationship between the growth of the pandemic and social me
 ## How to Run
  - Input Twitter API Credentials to twitter.token ([GUIDE](https://projects.raspberrypi.org/en/projects/getting-started-with-the-twitter-api/2))
  - Run master script with python 3.6+ `python 0_project_covid19.py`
-
+ 
 ## Reference
 - [1] M. Clinic, “Coronavirus disease 2019 (COVID-19),” Mayo Clinic, 16-Jun-2020. [Online]. Available: https://www.mayoclinic.org/diseases-conditions/coronavirus/symptoms-causes/syc-20479963. [Accessed: 25-Jun-2020].
 - [2] L. Gardner, “Mapping COVID-19,” JHU CSSE. [Online]. Available: https://systems.jhu.edu/research/public-health/ncov/. [Accessed: 25-Jun-2020].

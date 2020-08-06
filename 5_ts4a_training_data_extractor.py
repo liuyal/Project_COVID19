@@ -2,10 +2,20 @@ import os
 import sys
 import time
 import csv
+import requests
 
+def check_training_data_folder(data_directory, tweet_directory, tweet_url, sentiment_directory, sentiment_url, user, pwd):
 
-def check_training_data_folder(path):
-    print(path)
+    if not os.path.exists(data_directory):
+        os.mkdir(data_directory)
+
+    if not os.path.exists(tweet_directory):
+        r = requests.get(tweet_url, allow_redirects=True)
+        open(tweet_directory, 'wb').write(r.content)
+
+    if not os.path.exists(sentiment_directory):
+        r = requests.get(sentiment_url, allow_redirects=True)
+        open(sentiment_directory, 'wb').write(r.content)
 
 
 def combine_tweet_sentiment(text_directory, sentiment_directory, output_directory):
@@ -47,15 +57,23 @@ def combine_tweet_sentiment(text_directory, sentiment_directory, output_director
 
 
 if __name__ == "__main__":
-    training_data_directory = os.getcwd() + os.sep + "data" + os.sep + "training_data_t4sa"
-    tweet_text_directory = os.getcwd() + os.sep + "data" + os.sep + "training_data_t4sa" + os.sep + "t4sa_raw_tweets_text.csv"
-    sentiment_directory = os.getcwd() + os.sep + "data" + os.sep + "training_data_t4sa" + os.sep + "t4sa_text_sentiment.tsv"
-    combine_file_directory = os.getcwd() + os.sep + "data" + os.sep + "training_data_t4sa" + os.sep + "t4sa_training_data.csv"
+    username = "t4sa"
+    password = "U4Cm_dUa"
+
+    training_data_directory = os.getcwd() + os.sep + "data" + os.sep + "t4sa_training_data"
+
+    tweet_text_url = r'http://www.t4sa.it/dataset/raw_tweets_text.csv'
+    tweet_text_directory = os.getcwd() + os.sep + "data" + os.sep + "t4sa_training_data" + os.sep + "t4sa_raw_tweets_text.csv"
+
+    sentiment_url = r'http://www.t4sa.it/dataset/t4sa_text_sentiment.tsv'
+    sentiment_directory = os.getcwd() + os.sep + "data" + os.sep + "t4sa_training_data" + os.sep + "t4sa_text_sentiment.tsv"
+
+    combined_file_directory = os.getcwd() + os.sep + "data" + os.sep + "t4sa_training_data" + os.sep + "t4sa_training_data.csv"
 
     print("Checking T4SA Training Data...")
-    check_training_data_folder(training_data_directory)
+    # check_training_data_folder(training_data_directory, tweet_text_directory, tweet_text_url, sentiment_directory, sentiment_url, username, password)
 
     print("Extracting T4SA Sentiment Training Data...")
-    combine_tweet_sentiment(tweet_text_directory, sentiment_directory, combine_file_directory)
+    combine_tweet_sentiment(tweet_text_directory, sentiment_directory, combined_file_directory)
 
     print("Training Data Extraction Complete!")
