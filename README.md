@@ -17,7 +17,7 @@ The data mining architecture follows the basic Knowledge Discovery and Data Mini
 
 ## Results
 
-![](documents/assets/chart.png) 
+![](documents/assets/chart.PNG) 
 
 The first spike of negative sentiment tweets are near the end of the month of February, where the COVID-19 growth starts to manifest rapidly in areas outside of China. The second spike from mid-May onwards, which can be correlated to the explosive growth within the United States. As the number of confirmed cases increased from around 1.5 million to 4.5 million in the span of two months, so did the frequency of negative sentiment tweets. The day to day increase in number of negative sentiment tweets can be observed as the severity and number of confirmed cases increased due to COVID-19 pandemic.
 
