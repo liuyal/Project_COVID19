@@ -1,4 +1,4 @@
-## A Data Mining Study on COVID-19 Pandemic Growth & Related Social Media Dynamics 
+## A Data Mining Study on COVID-19 Pandemic Growth & Related Social Media Dynamics
 
 ## Introduction
 Coronavirus disease 2019 or COVID-19 is an infectious disease caused by severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2) [1]. First identified back in December 2019 in Wuhan province, China, the COVID-19 virus has resulted in nearly 15 million confirmed cases globally (as the writing of this report) [2]. Amidst the COVID-19 crisis, social media usage on platforms such as Facebook, WhatsApp, Twitter, and etc. has surged significantly [3]. As the general population rely heavily on social media platforms to gather the latest information in regards to the pandemic, resulting in an unprecedented amount of content and information.
@@ -7,10 +7,24 @@ An interesting data mining topic to focus on for the COVID-19 pandemic is to det
 
 The measurement of relationship between the growth of the pandemic and social media topics and semantics can help determine how a general population express their opinions, concerns, and general awareness throughout a global event. As such, semantics information and topic modeling can be used by government bodies around the world to determine the general population’s level of attitude towards the pandemic as it grows, and how to issue proper procedures and implement restriction in times of crisis for future global events or pandemics.
 
+## Architecture & Pipeline
+
+![](documents/assets/DM_Architecture.png)
+
+The data mining architecture follows the basic Knowledge Discovery and Data Mining (KDDM) process, where the entire process is split into five phase. Staring with data collection for obtaining the raw datasets using the data collector, then data preprocessing using the data formatter to prepare the datasets for transformation such as Tokenization. Data mining methods such as sentiment classifiers and topic modeling are then performed on the transformed dataset and the results are visualized for knowledge comprehension.
+
+## Results
+
+![](documents/assets/chart.png)
+
+The first spike of negative sentiment tweets are near the end of the month of February, where the COVID-19 growth starts to manifest rapidly in areas outside of China. The second spike from mid-May onwards, which can be correlated to the explosive growth within the United States. As the number of confirmed cases increased from around 1.5 million to 4.5 million in the span of two months, so did the frequency of negative sentiment tweets. The day to day increase in number of negative sentiment tweets can be observed as the severity and number of confirmed cases increased due to COVID-19 pandemic.
+
+The full report can be found [HERE](documents/report.pdf)
+
 ## How to Run
  - Input Twitter API Credentials to twitter.token ([GUIDE](https://projects.raspberrypi.org/en/projects/getting-started-with-the-twitter-api/2))
  - Run master script with python 3.6+ `python 0_project_covid19.py`
- 
+
 ## Reference
 - [1] M. Clinic, “Coronavirus disease 2019 (COVID-19),” Mayo Clinic, 16-Jun-2020. [Online]. Available: https://www.mayoclinic.org/diseases-conditions/coronavirus/symptoms-causes/syc-20479963. [Accessed: 25-Jun-2020].
 - [2] L. Gardner, “Mapping COVID-19,” JHU CSSE. [Online]. Available: https://systems.jhu.edu/research/public-health/ncov/. [Accessed: 25-Jun-2020].
